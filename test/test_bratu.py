@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 #
+import pyfvm
+
 import pycont
 
 
