@@ -4,7 +4,7 @@
 [![codecov](https://img.shields.io/codecov/c/github/nschloe/pycont.svg)](https://codecov.io/gh/nschloe/pycont)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 [![PyPi Version](https://img.shields.io/pypi/v/pycont.svg)](https://pypi.org/project/pycont)
-[![GitHub stars](https://img.shields.io/github/stars/nschloe/pycont.svg?logo=github&label=Stars)](https://github.com/nschloe/pycont)
+[![GitHub stars](https://img.shields.io/github/stars/nschloe/pycont.svg?logo=github&label=Stars&logoColor=white)](https://github.com/nschloe/pycont)
 
 [Numerical continuation](https://en.wikipedia.org/wiki/Numerical_continuation) in Python.
 

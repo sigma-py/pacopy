@@ -4,7 +4,7 @@ from __future__ import print_function
 
 from .__about__ import __author__, __email__, __license__, __version__, __status__
 
-from .main import main
+from .natural import natural
 
 __all__ = [
     "__author__",
@@ -12,7 +12,7 @@ __all__ = [
     "__license__",
     "__version__",
     "__status__",
-    "main",
+    "natural",
 ]
 
 # try:
