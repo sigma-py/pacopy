@@ -24,6 +24,12 @@ class Bratu1d(object):
         out[-1] = u[-1]
         return out
 
+    def df_dlmbda(self, u, lmbda):
+        out = numpy.exp(u)
+        out[0] = 0.0
+        out[-1] = 0.0
+        return out
+
     def jacobian_solver(self, u, lmbda, rhs):
         M = self.A.copy()
         d = M.diagonal()
