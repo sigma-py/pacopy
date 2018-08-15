@@ -34,4 +34,4 @@ def newton(f, jacobian_solver, u0, tol=1.0e-10, max_iter=20, verbose=True):
             "Newton's method didn't converge after {} steps.".format(k)
         )
 
-    return u
+    return u, k
