@@ -9,7 +9,7 @@ import pycont
 
 class Bratu1d(object):
     def __init__(self):
-        self.n = 6
+        self.n = 51
         h = 1.0 / (self.n - 1)
         self.A = (
             1.0
@@ -52,7 +52,8 @@ def test_pycont():
     def callback(k, lmbda, sol):
         return
 
-    pycont.natural(problem, u0, lmbda0, callback, max_steps=10)
+    # pycont.natural(problem, u0, lmbda0, callback, max_steps=100)
+    pycont.euler_newton(problem, u0, lmbda0, callback, max_steps=100)
     return
 
 

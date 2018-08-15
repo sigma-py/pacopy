@@ -32,7 +32,7 @@ def natural(
             max_iter=newton_max_steps,
         )
     except NewtonConvergenceError as e:
-        print("No convergence for lambda={}.".format(lmbda))
+        print("No convergence for initial step.".format(lmbda))
         raise e
 
     callback(k, lmbda, u)
@@ -46,7 +46,9 @@ def natural(
 
         if verbose:
             print(
-                "Step {}: lambda  {:.3e} + {:.3e}  ->  {:.3e}".format(k, lmbda, lambda_stepsize, lmbda + lambda_stepsize)
+                "Step {}: lambda  {:.3e} + {:.3e}  ->  {:.3e}".format(
+                    k, lmbda, lambda_stepsize, lmbda + lambda_stepsize
+                )
             )
 
         # Predictor
