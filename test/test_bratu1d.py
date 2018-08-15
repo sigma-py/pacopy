@@ -49,11 +49,11 @@ def test_pycont():
     u0 = numpy.zeros(problem.n)
     lmbda0 = 0.0
 
-    def callback(lmbda, sol):
-        print("Found solution for lmbda = {}".format(lmbda))
+    def callback(k, lmbda, sol):
+        print("Step {}: Found solution for lmbda = {}".format(k, lmbda))
         return
 
-    pycont.natural(problem, u0, lmbda0, callback)
+    pycont.natural(problem, u0, lmbda0, callback, max_steps=5)
     return
 
 
