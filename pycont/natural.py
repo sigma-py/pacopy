@@ -11,7 +11,7 @@ def natural(
     stepsize=1.0e-1,
     max_steps=100,
     verbose=True,
-    first_order_predictor=False,
+    first_order_predictor=True,
 ):
     """Natural parameter continuation
     """
@@ -38,7 +38,8 @@ def natural(
 
         lmbda += stepsize
         if first_order_predictor:
-            u0 = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
+            du_dlmbda = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
+            u0 = u + du_dlmbda * stepsize
         else:
             u0 = u
 

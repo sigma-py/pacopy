@@ -41,7 +41,7 @@ class Bratu1d(object):
         M.data[1][0] = 1.0
         M.data[1][self.n - 1] = 1.0
         M.data[2][1] = 0.0
-        return scipy.sparse.linalg.spsolve(M, rhs)
+        return scipy.sparse.linalg.spsolve(M.tocsr(), rhs)
 
 
 def test_pycont():
