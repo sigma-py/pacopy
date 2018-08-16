@@ -67,32 +67,49 @@ def euler_newton(
 
     delta_s = stepsize
 
+    u_prev = None
+    lmbda_prev = None
+    u_current = u.copy()
+    lmbda_current = lmbda
+
     # TODO replace dot product by problem.inner?
     while True:
         if k > max_steps:
             break
 
-        if verbose:
-            print("Step {}: lambda  {:.3e}".format(k, lmbda))
-
-        u_prev = u
-        lmbda_prev = lmbda
-
         # Predictor
-        # TODO Use the secant predictor if possible. In the first step, this is not
-        # possible and we're doing something else, namely
-        du_dlmbda = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
-        dlmbda_ds = 1 / numpy.sqrt(1 + numpy.dot(du_dlmbda, du_dlmbda))
-        du_ds = du_dlmbda * dlmbda_ds
-        tangent_length = numpy.sqrt(numpy.dot(du_ds, du_ds) + dlmbda_ds ** 2)
-        u = u_prev + du_ds / tangent_length * delta_s
-        lmbda = lmbda_prev + dlmbda_ds / tangent_length * delta_s
+        # Use the secant predictor if possible. In the first step, this is not possible
+        # and we're doing something else.
+        if k == 1:
+            du_dlmbda = problem.jacobian_solver(
+                u_current, lmbda, -problem.df_dlmbda(u_current, lmbda_current)
+            )
+            dlmbda_ds = 1 / numpy.sqrt(1 + numpy.dot(du_dlmbda, du_dlmbda))
+            du_ds = du_dlmbda * dlmbda_ds
+            # du_ds, dlmbda_ds are chosen normalized.
+        else:
+            # secant predictor
+            du_ds = (u_current - u_prev) / delta_s
+            dlmbda_ds = (lmbda_current - lmbda_prev) / delta_s
+            tangent_length = numpy.sqrt(numpy.dot(du_ds, du_ds) + dlmbda_ds ** 2)
+            du_ds /= tangent_length
+            dlmbda_ds /= tangent_length
+
+        u = u_current + du_ds * delta_s
+        lmbda = lmbda_current + dlmbda_ds * delta_s
+
+        if verbose:
+            print("Step {} (predictor): lambda  {:.3e}".format(k, lmbda))
 
         # Newton corrector
         num_newton_steps = 0
         while True:
             r = problem.f(u, lmbda)
-            q = numpy.dot(u - u_prev, u - u_prev) + (lmbda - lmbda_prev) ** 2 - delta_s ** 2
+            q = (
+                numpy.dot(u - u_current, u - u_current)
+                + (lmbda - lmbda_current) ** 2
+                - delta_s ** 2
+            )
 
             if numpy.dot(r, r) + q ** 2 < newton_tol:
                 print(
@@ -105,8 +122,8 @@ def euler_newton(
             z1 = problem.jacobian_solver(u, lmbda, -r)
             z2 = problem.jacobian_solver(u, lmbda, problem.df_dlmbda(u, lmbda))
 
-            dlmbda = (-q - 2 * numpy.dot(u - u_prev, z1)) / (
-                2 * (lmbda - lmbda_prev) - 2 * numpy.dot(u - u_prev, z2)
+            dlmbda = (-q - 2 * numpy.dot(u - u_current, z1)) / (
+                2 * (lmbda - lmbda_current) - 2 * numpy.dot(u - u_current, z2)
             )
             du = z1 - dlmbda * z2
 
@@ -114,7 +131,14 @@ def euler_newton(
             lmbda += dlmbda
             num_newton_steps += 1
 
+        if verbose:
+            print("Step {} (final): lambda  {:.3e}\n".format(k, lmbda))
+
         callback(k, lmbda, u)
         k += 1
+        u_prev = u_current
+        lmbda_prev = lmbda_current
+        u_current = u
+        lmbda_current = lmbda
 
     return None
