@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #
+import matplotlib.pyplot as plt
 import scipy.sparse
 import scipy.sparse.linalg
 import numpy
@@ -49,11 +50,29 @@ def test_pycont():
     u0 = numpy.zeros(problem.n)
     lmbda0 = 0.0
 
+    plt.ion()
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    plt.axis("square")
+    plt.xlabel("λ")
+    plt.ylabel("‖u‖_∞")
+    lmbda_list = []
+    values_list = []
+    line1, = ax.plot(lmbda_list, values_list, '-', color="#1f77f4")
+
     def callback(k, lmbda, sol):
+        lmbda_list.append(lmbda)
+        line1.set_xdata(lmbda_list)
+        values_list.append(numpy.max(numpy.abs(sol)))
+        line1.set_ydata(values_list)
+        ax.set_xlim(0.0, 4.0)
+        ax.set_ylim(0.0, 6.0)
+        fig.canvas.draw()
+        fig.canvas.flush_events()
         return
 
     # pycont.natural(problem, u0, lmbda0, callback, max_steps=100)
-    pycont.euler_newton(problem, u0, lmbda0, callback, max_steps=100)
+    pycont.euler_newton(problem, u0, lmbda0, callback, max_steps=500)
     return
 
 
