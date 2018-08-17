@@ -85,7 +85,7 @@ class Brusselator2d(object):
 
         # Build the 2x2 block matrix
         #
-        #   [d1 A + b+1 + 2uv   u**2       ]
+        #   [d1 A - b+1 + 2uv   u**2       ]
         #   [-2uv + b           d2 A - u**2]
         #
         # and solve it explicitly. There are better ways for doing this, e.g., via the
@@ -94,7 +94,7 @@ class Brusselator2d(object):
 
         A11 = self.d1 * self.A
         diag = A11.diagonal()
-        diag += b + 1 + 2 * u * v
+        diag += -(b + 1) + 2 * u * v
         A11.setdiag(diag)
         set_dirichlet_rows(A11, numpy.where(ib)[0])
 
