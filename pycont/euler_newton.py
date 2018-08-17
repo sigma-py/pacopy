@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-import numpy
+import math
 
 from .newton import newton, NewtonConvergenceError
 
@@ -87,7 +87,7 @@ def euler_newton(
             du_dlmbda = problem.jacobian_solver(
                 u_current, lmbda_current, -problem.df_dlmbda(u_current, lmbda_current)
             )
-            dlmbda_ds = 1 / numpy.sqrt(1 + theta2 * problem.inner(du_dlmbda, du_dlmbda))
+            dlmbda_ds = 1 / math.sqrt(1 + theta2 * problem.inner(du_dlmbda, du_dlmbda))
             du_ds = du_dlmbda * dlmbda_ds
             # du_ds, dlmbda_ds are chosen normalized.
             if k > 1:
@@ -95,13 +95,13 @@ def euler_newton(
                 r = theta2 * problem.inner(du_dlmbda, u_current - u_prev) + (
                     lmbda_current - lmbda_prev
                 )
-                dlmbda_ds = numpy.copysign(dlmbda_ds, r)
+                dlmbda_ds = abs(dlmbda_ds) if r > 0 else -abs(dlmbda_ds)
         else:
             # secant predictor
             assert predictor == "secant"
             du_ds = (u_current - u_prev) / delta_s
             dlmbda_ds = (lmbda_current - lmbda_prev) / delta_s
-            tangent_length = numpy.sqrt(problem.inner(du_ds, du_ds) + dlmbda_ds ** 2)
+            tangent_length = math.sqrt(problem.inner(du_ds, du_ds) + dlmbda_ds ** 2)
             du_ds /= tangent_length
             dlmbda_ds /= tangent_length
 
