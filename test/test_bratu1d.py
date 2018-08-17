@@ -12,12 +12,20 @@ class Bratu1d(object):
     def __init__(self):
         self.n = 51
         h = 1.0 / (self.n - 1)
+
+        self.H = numpy.full(self.n, h)
+        self.H[0] = h / 2
+        self.H[-1] = h / 2
+
         self.A = (
             1.0
             / h ** 2
             * scipy.sparse.diags([1.0, -2.0, 1.0], [-1, 0, 1], shape=(self.n, self.n))
         )
         return
+
+    def inner(self, a, b):
+        return numpy.dot(a, self.H * b)
 
     def f(self, u, lmbda):
         out = self.A.dot(u) + lmbda * numpy.exp(u)
