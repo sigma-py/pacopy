@@ -78,11 +78,10 @@ class Brusselator2d(object):
         i = self.mesh.is_boundary_node
         q[i] = 0.0
         r[i] = -1.0 / self.a
-        return [q, r]
+        return numpy.array([q, r])
 
     def jacobian_solver(self, x, b, rhs):
         u, v = x
-        rhs_u, rhs_v = rhs
 
         # Build the 2x2 block matrix
         #
@@ -119,7 +118,6 @@ class Brusselator2d(object):
         ])
 
         rhs = numpy.concatenate(rhs)
-
         sol = scipy.sparse.linalg.spsolve(J.tocsr(), rhs)
 
         n = u.shape[0]
