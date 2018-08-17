@@ -39,8 +39,9 @@ def euler_newton(
     max_steps=100,
     verbose=True,
     newton_tol=1.0e-11,
-    newton_max_steps=5,
+    newton_max_steps=20,
     predictor="secant",
+    corrector_variant="secant",
 ):
     """Pseudo-arclength continuation, implemented in the style of LOCA
     <https://trilinos.org/packages/nox-and-loca/>, i.e., one doesn't solve a bordered
@@ -83,6 +84,7 @@ def euler_newton(
         # Predictor
         if predictor == "tangent" or k == 1:
             # tangent predictor
+            # TODO not working at turning points; fix that
             du_dlmbda = problem.jacobian_solver(
                 u_current, lmbda_current, -problem.df_dlmbda(u_current, lmbda_current)
             )
@@ -90,10 +92,10 @@ def euler_newton(
             du_ds = du_dlmbda * dlmbda_ds
             # du_ds, dlmbda_ds are chosen normalized.
             if k > 1:
+                # Make sure the sign of dlambda_ds is correct
                 r = theta2 * numpy.dot(du_dlmbda, u_current - u_prev) + (
                     lmbda_current - lmbda_prev
                 )
-                print("r", r)
                 dlmbda_ds = numpy.copysign(dlmbda_ds, r)
         else:
             # secant predictor
@@ -104,8 +106,6 @@ def euler_newton(
             du_ds /= tangent_length
             dlmbda_ds /= tangent_length
 
-        print(dlmbda_ds)
-
         u = u_current + du_ds * delta_s
         lmbda = lmbda_current + dlmbda_ds * delta_s
 
@@ -115,17 +115,25 @@ def euler_newton(
         # Newton corrector
         num_newton_steps = 0
         while True:
+            if num_newton_steps > newton_max_steps:
+                exit(1)
+
             r = problem.f(u, lmbda)
-            q = (
-                numpy.dot(u - u_current, u - u_current)
-                + (lmbda - lmbda_current) ** 2
-                - delta_s ** 2
-            )
-            # q = (
-            #     numpy.dot(u - u_current, du_ds)
-            #     + (lmbda - lmbda_current) * dlmbda_ds
-            #     - delta_s
-            # )
+            if corrector_variant == "tangent":
+                q = (
+                    numpy.dot(u - u_current, du_ds)
+                    + (lmbda - lmbda_current) * dlmbda_ds
+                    - delta_s
+                )
+            else:
+                assert corrector_variant == "secant"
+                q = (
+                    numpy.dot(u - u_current, u - u_current)
+                    + (lmbda - lmbda_current) ** 2
+                    - delta_s ** 2
+                )
+
+            print(numpy.dot(r, r), q ** 2)
 
             if numpy.dot(r, r) + q ** 2 < newton_tol ** 2:
                 print(
@@ -136,16 +144,19 @@ def euler_newton(
                 break
 
             z1 = problem.jacobian_solver(u, lmbda, -r)
-            z2 = problem.jacobian_solver(u, lmbda, problem.df_dlmbda(u, lmbda))
+            z2 = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
 
-            dlmbda = (-q - 2 * numpy.dot(u - u_current, z1)) / (
-                2 * (lmbda - lmbda_current) - 2 * numpy.dot(u - u_current, z2)
-            )
-            du = z1 - dlmbda * z2
-            # dlmbda = -(q + 2 * numpy.dot(du_ds, z1)) / (
-            #     dlmbda_ds - numpy.dot(du_ds, z2)
-            # )
-            # du = z1 + dlmbda * z2
+            if corrector_variant == "tangent":
+                dlmbda = -(q + numpy.dot(du_ds, z1)) / (
+                    dlmbda_ds + numpy.dot(du_ds, z2)
+                )
+            else:
+                assert corrector_variant == "secant"
+                dlmbda = -(q + 2 * numpy.dot(u - u_current, z1)) / (
+                    2 * (lmbda - lmbda_current) + 2 * numpy.dot(u - u_current, z2)
+                )
+
+            du = z1 + dlmbda * z2
 
             u += du
             lmbda += dlmbda

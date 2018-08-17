@@ -58,7 +58,7 @@ def test_pycont():
     plt.ylabel("‖u‖_∞")
     lmbda_list = []
     values_list = []
-    line1, = ax.plot(lmbda_list, values_list, '-', color="#1f77f4")
+    line1, = ax.plot(lmbda_list, values_list, "-", color="#1f77f4")
 
     def callback(k, lmbda, sol):
         lmbda_list.append(lmbda)
