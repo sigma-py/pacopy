@@ -43,7 +43,11 @@ class Mittelmann(object):
         v = TestFunction(self.V)
         ufun = Function(self.V)
         ufun.vector()[:] = u
-        out = self.a * u - 10 * assemble((ufun - lmbda * exp(ufun)) * v * dx)
+        out = (
+            self.a * u
+            - 10 * assemble(ufun * v * dx)
+            + 10 * lmbda * assemble(exp(ufun) * v * dx)
+        )
         return out
 
     def df_dlmbda(self, u, lmbda):
@@ -58,7 +62,11 @@ class Mittelmann(object):
         v = TestFunction(self.V)
         ufun = Function(self.V)
         ufun.vector()[:] = u
-        a = self.a - 10 * assemble((1.0 - lmbda * exp(ufun)) * t * v * dx)
+        a = (
+            self.a
+            - 10 * assemble(t * v * dx)
+            + 10 * lmbda * assemble(exp(ufun) * t * v * dx)
+        )
         x = Function(self.V)
         solve(a, x.vector(), rhs)
         return x.vector()
