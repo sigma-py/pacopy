@@ -2,6 +2,7 @@
 #
 import matplotlib.pyplot as plt
 import numpy
+from scipy.sparse.linalg import spsolve
 
 import krypy
 from krypy.linsys import LinearSystem, Gmres
@@ -82,7 +83,7 @@ class EnergyPrime(object):
 
 class GinzburgLandau(object):
     def __init__(self):
-        points, cells = meshzoo.rectangle(0.0, 1.0, 0.0, 1.0, 20, 20)
+        points, cells = meshzoo.rectangle(0.0, 1.0, 0.0, 1.0, 50, 50)
         self.mesh = meshplex.MeshTri(points, cells)
 
         self.V = -1.0
@@ -129,14 +130,37 @@ class GinzburgLandau(object):
                 dot_adj=_apply_jacobian,
             )
 
+        def prec(psi):
+            def _apply(phi):
+                prec = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
+                # diag = prec.diagonal()
+                # cv = self.mesh.control_volumes
+                # diag += cv.reshape(psi.shape) * self.g * 2.0 * (psi.real ** 2 + psi.imag ** 2)
+                # prec.setdiag(diag)
+                # TODO pyamg solve
+                out = spsolve(prec, phi)
+                return out.reshape(phi.shape)
+
+            num_unknowns = len(self.mesh.node_coords)
+            return krypy.utils.LinearOperator(
+                (num_unknowns, num_unknowns),
+                complex,
+                dot=_apply,
+                dot_adj=_apply,
+            )
+
         jac = jacobian(psi)
+        prec = prec(psi)
         linear_system = LinearSystem(
             A=jac,
             b=rhs,
+            M=prec,
             self_adjoint=True,
             ip_B=lambda a, b: numpy.dot(a.T.conj(), b).real,
         )
-        out = Gmres(linear_system, maxiter=1000, tol=1.0e-10)
+        print("start gmres...")
+        out = Gmres(linear_system, maxiter=1000, tol=1.0e-8)
+        print("GMRES converged after {} iterations.".format(len(out.resnorms)))
         return out.xk[:, 0]
 
 
@@ -162,7 +186,7 @@ def test_ginzburg_landau():
         line1.set_xdata(b_list)
         values_list.append(numpy.sqrt(problem.inner(sol, sol)))
         line1.set_ydata(values_list)
-        ax.set_xlim(0.0, 1.0)
+        ax.set_xlim(0.0, 3.0)
         ax.set_ylim(0.0, 1.0)
         ax.invert_yaxis()
         fig.canvas.draw()
