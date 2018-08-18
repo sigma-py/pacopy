@@ -25,22 +25,18 @@ class Energy(object):
         return
 
     def eval(self, mesh, cell_mask):
+        # project the magnetic potential on the edge at the midpoint
         nec = mesh.idx_hierarchy[..., cell_mask]
         X = mesh.node_coords[nec]
-
         edge_midpoint = 0.5 * (X[0] + X[1])
+        magnetic_potential = 0.5 * numpy.cross(self.magnetic_field, edge_midpoint.T).T
+
+        # The dot product <magnetic_potential, edge>, executed for many points at once;
+        # cf. <http://stackoverflow.com/a/26168677/353337>.
         edge = X[1] - X[0]
-        edge_ce_ratio = mesh.ce_ratios[..., cell_mask]
-
-        # project the magnetic potential on the edge at the midpoint
-        magnetic_potential = (
-            0.5 * numpy.cross(self.magnetic_field, edge_midpoint.T).T
-        )
-
-        # The dot product <magnetic_potential, edge>, executed for many
-        # points at once; cf. <http://stackoverflow.com/a/26168677/353337>.
         beta = numpy.einsum("ijk,ijk->ij", magnetic_potential.T, edge.T)
 
+        edge_ce_ratio = mesh.ce_ratios[..., cell_mask]
         return numpy.array(
             [
                 [edge_ce_ratio, -edge_ce_ratio * numpy.exp(1j * beta)],
@@ -62,16 +58,15 @@ class EnergyPrime(object):
     def eval(self, mesh, cell_mask):
         nec = mesh.idx_hierarchy[..., cell_mask]
         X = mesh.node_coords[nec]
-
         edge_midpoint = 0.5 * (X[0] + X[1])
-        edge = X[1] - X[0]
-        edge_ce_ratio = mesh.ce_ratios[..., cell_mask]
-
         magnetic_potential = (
             0.5 * numpy.cross(self.magnetic_field, edge_midpoint.T).T
         )
 
+        edge = X[1] - X[0]
         beta = numpy.einsum("ijk,ijk->ij", magnetic_potential.T, edge.T)
+
+        edge_ce_ratio = mesh.ce_ratios[..., cell_mask]
         zero = numpy.zeros(edge_ce_ratio.shape, dtype=complex)
         return numpy.array(
             [
@@ -83,7 +78,7 @@ class EnergyPrime(object):
 
 class GinzburgLandau(object):
     def __init__(self):
-        points, cells = meshzoo.rectangle(0.0, 1.0, 0.0, 1.0, 50, 50)
+        points, cells = meshzoo.rectangle(0.0, 1.0, 0.0, 1.0, 20, 20)
         self.mesh = meshplex.MeshTri(points, cells)
 
         self.V = -1.0
@@ -91,10 +86,12 @@ class GinzburgLandau(object):
         return
 
     def inner(self, x, y):
-        return numpy.real(numpy.dot(x, self.mesh.control_volumes * numpy.conjugate(y)))
+        """This is the special Ginzburg-Landau inner product. *bling bling*
+        """
+        return numpy.real(numpy.dot(x.conj(), self.mesh.control_volumes * y))
 
     def norm2_r(self, q):
-        return numpy.real(numpy.dot(q, numpy.conjugate(q)))
+        return numpy.real(numpy.dot(q.conj(), q))
 
     def f(self, psi, mu):
         keo = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
@@ -149,6 +146,12 @@ class GinzburgLandau(object):
                 dot_adj=_apply,
             )
 
+        def krypy_inner(a, b):
+            assert a.shape[1] == 1
+            assert b.shape[1] == 1
+            out = self.inner(a[:, 0], b[:, 0])
+            return numpy.array([[out]])
+
         jac = jacobian(psi)
         prec = prec(psi)
         linear_system = LinearSystem(
@@ -156,11 +159,9 @@ class GinzburgLandau(object):
             b=rhs,
             M=prec,
             self_adjoint=True,
-            ip_B=lambda a, b: numpy.dot(a.T.conj(), b).real,
+            ip_B=krypy_inner,
         )
-        print("start gmres...")
         out = Gmres(linear_system, maxiter=1000, tol=1.0e-8)
-        print("GMRES converged after {} iterations.".format(len(out.resnorms)))
         return out.xk[:, 0]
 
 
@@ -200,8 +201,8 @@ def test_ginzburg_landau():
         )
         return
 
-    pycont.natural(problem, u0, b0, callback, max_steps=100)
-    # pycont.euler_newton(problem, u0, b0, callback, max_steps=300)
+    # pycont.natural(problem, u0, b0, callback, max_steps=100)
+    pycont.euler_newton(problem, u0, b0, callback, max_steps=300)
     return
 
 
