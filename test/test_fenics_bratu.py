@@ -4,8 +4,18 @@ import math
 
 import matplotlib.pyplot as plt
 from dolfin import (
-    IntervalMesh, FunctionSpace, dx, assemble, dot, grad, DirichletBC, TrialFunction,
-    TestFunction, exp, Function, Constant, solve
+    IntervalMesh,
+    FunctionSpace,
+    dx,
+    assemble,
+    dot,
+    grad,
+    DirichletBC,
+    TrialFunction,
+    TestFunction,
+    exp,
+    Function,
+    solve,
 )
 
 import pycont
@@ -17,49 +27,54 @@ class Bratu(object):
 
         self.V = FunctionSpace(mesh, "Lagrange", 1)
 
-        # u = TrialFunction(V)
-        # v = TestFunction(V)
-        # a = -dot(grad(u), grad(v)) * dx
-
         self.bc = DirichletBC(self.V, 0.0, "on_boundary")
-        # self.A = assemble(a, bcs=bc)
+
+        u = TrialFunction(self.V)
+        v = TestFunction(self.V)
+        self.a = assemble(-dot(grad(u), grad(v)) * dx)
+        self.m = assemble(u * v * dx)
         return
 
     def inner(self, a, b):
-        return assemble(a * b * dx)
+        return a.inner(self.m * b)
 
     def inner_r(self, a, b):
         return a.inner(b)
 
     def f(self, u, lmbda):
         v = TestFunction(self.V)
-        out = assemble(
-            -dot(grad(u), grad(v)) * dx + Constant(lmbda) * exp(u) * v * dx
-        )
-        DirichletBC(self.V, u, "on_boundary").apply(out)
+        ufun = Function(self.V)
+        ufun.vector()[:] = u
+        out = self.a * u + lmbda * assemble(exp(ufun) * v * dx)
+        DirichletBC(self.V, ufun, "on_boundary").apply(out)
         return out
 
     def df_dlmbda(self, u, lmbda):
         v = TestFunction(self.V)
-        out = assemble(exp(u) * v * dx)
+        ufun = Function(self.V)
+        ufun.vector()[:] = u
+        out = assemble(exp(ufun) * v * dx)
         self.bc.apply(out)
         return out
 
     def jacobian_solver(self, u, lmbda, rhs):
         t = TrialFunction(self.V)
         v = TestFunction(self.V)
-        a = assemble(
-            -dot(grad(t), grad(v)) * dx + Constant(lmbda) * exp(u) * t * v * dx
-        )
+        # a = assemble(
+        #     -dot(grad(t), grad(v)) * dx + Constant(lmbda) * exp(u) * t * v * dx
+        # )
+        ufun = Function(self.V)
+        ufun.vector()[:] = u
+        a = self.a + lmbda * assemble(exp(ufun) * t * v * dx)
         self.bc.apply(a)
         x = Function(self.V)
         solve(a, x.vector(), rhs)
-        return x
+        return x.vector()
 
 
 def test_bratu_fenics():
     problem = Bratu()
-    u0 = Function(problem.V)
+    u0 = Function(problem.V).vector()
     lmbda0 = 0.0
 
     plt.ion()
@@ -83,8 +98,8 @@ def test_bratu_fenics():
         fig.canvas.flush_events()
         return
 
-    pycont.natural(problem, u0, lmbda0, callback, max_steps=100)
-    # pycont.euler_newton(problem, u0, lmbda0, callback, max_steps=500)
+    # pycont.natural(problem, u0, lmbda0, callback, max_steps=100)
+    pycont.euler_newton(problem, u0, lmbda0, callback, max_steps=500)
     return
 
 
