@@ -27,8 +27,8 @@ class Bratu1d(object):
     def inner(self, a, b):
         return numpy.dot(a, self.H * b)
 
-    def inner_r(self, a, b):
-        return numpy.dot(a, b)
+    def norm2_r(self, a):
+        return numpy.dot(a, a)
 
     def f(self, u, lmbda):
         out = self.A.dot(u) + lmbda * numpy.exp(u)

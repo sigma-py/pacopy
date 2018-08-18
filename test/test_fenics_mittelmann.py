@@ -36,8 +36,8 @@ class Mittelmann(object):
     def inner(self, a, b):
         return a.inner(self.m * b)
 
-    def inner_r(self, a, b):
-        return a.inner(b)
+    def norm2_r(self, a):
+        return a.inner(a)
 
     def f(self, u, lmbda):
         v = TestFunction(self.V)

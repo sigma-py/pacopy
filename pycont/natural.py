@@ -27,7 +27,7 @@ def natural(
         u, _ = newton(
             lambda u: problem.f(u, lmbda),
             lambda u, rhs: problem.jacobian_solver(u, lmbda, rhs),
-            problem.inner_r,
+            problem.norm2_r,
             u0,
             tol=newton_tol,
             max_iter=newton_max_steps,
@@ -65,7 +65,7 @@ def natural(
             u, newton_steps = newton(
                 lambda u: problem.f(u, lmbda),
                 lambda u, rhs: problem.jacobian_solver(u, lmbda, rhs),
-                problem.inner_r,
+                problem.norm2_r,
                 u0,
                 tol=newton_tol,
                 max_iter=newton_max_steps,

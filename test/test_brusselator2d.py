@@ -53,12 +53,11 @@ class Brusselator2d(object):
             vx, self.mesh.control_volumes * vy
         )
 
-    def inner_r(self, q, r):
-        """Inner product in the range space (residuals and such).
+    def norm2_r(self, q):
+        """Squared norm in the range space (residuals and such).
         """
-        uq, vq = q
-        ur, vr = r
-        return numpy.dot(uq, ur) + numpy.dot(vq, vr)
+        u, v = q
+        return numpy.dot(u, u) + numpy.dot(v, v)
 
     def f(self, x, b):
         u, v = x

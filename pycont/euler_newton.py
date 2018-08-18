@@ -56,7 +56,7 @@ def euler_newton(
         u, _ = newton(
             lambda u: problem.f(u, lmbda),
             lambda u, rhs: problem.jacobian_solver(u, lmbda, rhs),
-            problem.inner_r,
+            problem.norm2_r,
             u0,
             tol=newton_tol,
             max_iter=newton_max_steps,
@@ -133,9 +133,9 @@ def euler_newton(
                     - delta_s ** 2
                 )
 
-            print(problem.inner_r(r, r), q ** 2)
+            print(problem.norm2_r(r), q ** 2)
 
-            if problem.inner_r(r, r) + q ** 2 < newton_tol ** 2:
+            if problem.norm2_r(r) + q ** 2 < newton_tol ** 2:
                 print(
                     "Newton corrector converged after {} steps.".format(
                         num_newton_steps

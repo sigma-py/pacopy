@@ -40,8 +40,8 @@ class Bratu(object):
     def inner(self, a, b):
         return a.inner(self.m * b)
 
-    def inner_r(self, a, b):
-        return a.inner(b)
+    def norm2_r(self, a):
+        return a.inner(a)
 
     def f(self, u, lmbda):
         v = TestFunction(self.V)
@@ -86,6 +86,7 @@ def test_bratu_fenics():
     plt.axis("square")
     plt.xlabel("$\\lambda$")
     plt.ylabel("$||u||_2$")
+    plt.grid()
     lmbda_list = []
     values_list = []
     line1, = ax.plot(lmbda_list, values_list, "-", color="#1f77f4")
