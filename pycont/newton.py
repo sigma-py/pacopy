@@ -8,7 +8,7 @@ class NewtonConvergenceError(Exception):
 
 
 def newton(f, jacobian_solver, inner, u0, tol=1.0e-10, max_iter=20, verbose=True):
-    u = u0.copy()
+    u = u0
 
     fu = f(u)
     nrm = math.sqrt(inner(fu, fu))

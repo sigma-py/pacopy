@@ -5,6 +5,7 @@ import scipy.sparse
 import scipy.sparse.linalg
 import numpy
 
+import meshio
 import meshzoo
 import meshplex
 import pyfvm
@@ -48,9 +49,8 @@ class Brusselator2d(object):
         """
         ux, vx = x
         uy, vy = y
-        return (
-            numpy.dot(ux, self.mesh.control_volumes * uy)
-            + numpy.dot(vx, self.mesh.control_volumes * vy)
+        return numpy.dot(ux, self.mesh.control_volumes * uy) + numpy.dot(
+            vx, self.mesh.control_volumes * vy
         )
 
     def inner_r(self, q, r):
@@ -112,10 +112,9 @@ class Brusselator2d(object):
         A22.setdiag(diag)
         set_dirichlet_rows(A22, numpy.where(ib)[0])
 
-        J = scipy.sparse.vstack([
-            scipy.sparse.hstack([A11, A12]),
-            scipy.sparse.hstack([A21, A22]),
-        ])
+        J = scipy.sparse.vstack(
+            [scipy.sparse.hstack([A11, A12]), scipy.sparse.hstack([A21, A22])]
+        )
 
         rhs = numpy.concatenate(rhs)
         sol = scipy.sparse.linalg.spsolve(J.tocsr(), rhs)
@@ -123,7 +122,7 @@ class Brusselator2d(object):
         n = u.shape[0]
         u_sol = sol[:n]
         v_sol = sol[n:]
-        return [u_sol, v_sol]
+        return numpy.array([u_sol, v_sol])
 
 
 def test_brusselator2d():
@@ -137,7 +136,7 @@ def test_brusselator2d():
     ax = fig.add_subplot(111)
     plt.axis("square")
     plt.xlabel("b")
-    plt.ylabel("‖u‖_∞")
+    plt.ylabel("$||u||_\infty$")
     b_list = []
     values_list = []
     line1, = ax.plot(b_list, values_list, "-", color="#1f77f4")
@@ -147,14 +146,22 @@ def test_brusselator2d():
         line1.set_xdata(b_list)
         values_list.append(numpy.max(numpy.abs(sol)))
         line1.set_ydata(values_list)
-        ax.set_xlim(0.0, 4.0)
-        ax.set_ylim(0.0, 6.0)
+        ax.set_xlim(0.0, 200.0)
+        ax.set_ylim(0.0, 40.0)
         fig.canvas.draw()
         fig.canvas.flush_events()
+        # Store the solution
+        u, v = sol
+        meshio.write_points_cells(
+            "sol{:03d}.vtk".format(k),
+            problem.mesh.node_coords,
+            {"triangle": problem.mesh.cells["nodes"]},
+            point_data={"u": u, "v": v},
+        )
         return
 
-    pycont.natural(problem, u0, b0, callback, max_steps=100)
-    # pycont.euler_newton(problem, u0, b0, callback, max_steps=500)
+    # pycont.natural(problem, u0, b0, callback, max_steps=100)
+    pycont.euler_newton(problem, u0, b0, callback, max_steps=300)
     return
 
 
