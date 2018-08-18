@@ -133,9 +133,9 @@ def euler_newton(
                     - delta_s ** 2
                 )
 
-            print(problem.inner(r, r), q ** 2)
+            print(problem.inner_r(r, r), q ** 2)
 
-            if problem.inner(r, r) + q ** 2 < newton_tol ** 2:
+            if problem.inner_r(r, r) + q ** 2 < newton_tol ** 2:
                 print(
                     "Newton corrector converged after {} steps.".format(
                         num_newton_steps
