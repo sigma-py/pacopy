@@ -65,8 +65,9 @@ def test_pycont():
     fig = plt.figure()
     ax = fig.add_subplot(111)
     plt.axis("square")
-    plt.xlabel("λ")
-    plt.ylabel("‖u‖_∞")
+    plt.xlabel("$\\lambda$")
+    plt.ylabel("$||u||_\\infty$")
+    plt.grid()
     lmbda_list = []
     values_list = []
     line1, = ax.plot(lmbda_list, values_list, "-", color="#1f77f4")

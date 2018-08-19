@@ -130,10 +130,11 @@ class GinzburgLandau(object):
         def prec(psi):
             def _apply(phi):
                 prec = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
-                # diag = prec.diagonal()
-                # cv = self.mesh.control_volumes
-                # diag += cv.reshape(psi.shape) * self.g * 2.0 * (psi.real ** 2 + psi.imag ** 2)
-                # prec.setdiag(diag)
+                # Add diagonal to avoid singularity for mu = 0.
+                diag = prec.diagonal()
+                cv = self.mesh.control_volumes
+                diag += cv.reshape(psi.shape) * self.g * 2.0 * (psi.real ** 2 + psi.imag ** 2)
+                prec.setdiag(diag)
                 # TODO pyamg solve
                 out = spsolve(prec, phi)
                 return out.reshape(phi.shape)
@@ -202,7 +203,7 @@ def test_ginzburg_landau():
         return
 
     # pycont.natural(problem, u0, b0, callback, max_steps=100)
-    pycont.euler_newton(problem, u0, b0, callback, max_steps=300)
+    pycont.euler_newton(problem, u0, b0, callback, max_steps=300, stepsize0=1.0e-2)
     return
 
 

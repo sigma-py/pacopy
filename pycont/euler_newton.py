@@ -82,7 +82,7 @@ def euler_newton(
     # threshold after which theta is rescaled
     lmbda_prime_max = 0.0
     # square of the target for dlmbda_ds
-    lmbda_prime_g2 = 0.5
+    dlmbda_ds_target2 = 0.5
     theta = 1.0
 
     while True:
@@ -109,16 +109,23 @@ def euler_newton(
                 dlmbda_ds = abs(dlmbda_ds) if r > 0 else -abs(dlmbda_ds)
         else:
             # secant predictor
-            # TODO add theta
             assert predictor == "secant"
             du_ds = (u_current - u_prev) / ds
             dlmbda_ds = (lmbda_current - lmbda_prev) / ds
-            tangent_length = math.sqrt(problem.inner(du_ds, du_ds) + dlmbda_ds ** 2)
-            du_ds /= tangent_length
-            dlmbda_ds /= tangent_length
+            theta = (1 - dlmbda_ds**2) / problem.inner(du_ds, du_ds)
 
-        u = u_current + du_ds * ds
-        lmbda = lmbda_current + dlmbda_ds * ds
+        print(
+                "Compare: {:.3e}  {:.3e}  {:.3e}".format(
+                dlmbda_ds ** 2, theta ** 2 * problem.inner(du_ds, du_ds),
+                dlmbda_ds ** 2 + theta ** 2 * problem.inner(du_ds, du_ds),
+            )
+        )
+
+        tangent_length = math.sqrt(
+            theta ** 2 * problem.inner(du_ds, du_ds) + dlmbda_ds ** 2
+        )
+        u = u_current + du_ds / tangent_length * ds
+        lmbda = lmbda_current + dlmbda_ds / tangent_length * ds
 
         if verbose:
             print(
@@ -132,6 +139,7 @@ def euler_newton(
             problem,
             u,
             lmbda,
+            theta,
             u_current,
             lmbda_current,
             du_ds,
@@ -158,13 +166,19 @@ def euler_newton(
 
         # Possibly rescale theta; see LOCA book
         # <http://www.cs.sandia.gov/loca/loca1.1_book.pdf>
-        if dlmbda_ds > lmbda_prime_max:
-            theta *= (
-                dlmbda_ds
-                / math.sqrt(lmbda_prime_g2)
-                * math.sqrt((1 - lmbda_prime_g2) / (1 - dlmbda_ds ** 2))
-            )
-            theta = min(theta, 1.0e8)
+        if dlmbda_ds ** 2 > lmbda_prime_max ** 2:
+            print("dlmbda_ds: {:.3e}".format(dlmbda_ds))
+            if abs(dlmbda_ds ** 2 - 1.0) < 1.0e-15:
+                theta = 1.0e8
+            else:
+                # LOCA book, eq. (2.23)
+                theta *= math.sqrt(
+                    dlmbda_ds ** 2 / (1 - dlmbda_ds ** 2)
+                    * (1 - dlmbda_ds_target2) / dlmbda_ds_target2
+                )
+                theta = min(theta, 1.0e8)
+
+            print("new theta: {:.3e}".format(theta))
 
         callback(k, lmbda, u)
         k += 1
@@ -180,6 +194,7 @@ def _newton_corrector(
     problem,
     u,
     lmbda,
+    theta,
     u_current,
     lmbda_current,
     du_ds,
@@ -199,18 +214,19 @@ def _newton_corrector(
         r = problem.f(u, lmbda)
         if corrector_variant == "tangent":
             q = (
-                problem.inner(u - u_current, du_ds)
+                theta ** 2 * problem.inner(u - u_current, du_ds)
                 + (lmbda - lmbda_current) * dlmbda_ds
                 - ds
             )
         else:
             assert corrector_variant == "secant"
             q = (
-                problem.inner(u - u_current, u - u_current)
+                theta ** 2 * problem.inner(u - u_current, u - u_current)
                 + (lmbda - lmbda_current) ** 2
                 - ds ** 2
             )
 
+        print("Newton norm: {:.3e}".format(math.sqrt(problem.norm2_r(r) + q ** 2)))
         if problem.norm2_r(r) + q ** 2 < newton_tol ** 2:
             print("Newton corrector converged after {} steps.".format(num_newton_steps))
             newton_success = True
@@ -220,13 +236,14 @@ def _newton_corrector(
         z2 = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
 
         if corrector_variant == "tangent":
-            dlmbda = -(q + problem.inner(du_ds, z1)) / (
-                dlmbda_ds + problem.inner(du_ds, z2)
+            dlmbda = -(q + theta ** 2 * problem.inner(du_ds, z1)) / (
+                dlmbda_ds + theta ** 2 * problem.inner(du_ds, z2)
             )
         else:
             assert corrector_variant == "secant"
-            dlmbda = -(q + 2 * problem.inner(u - u_current, z1)) / (
-                2 * (lmbda - lmbda_current) + 2 * problem.inner(u - u_current, z2)
+            dlmbda = -(q + 2 * theta ** 2 * problem.inner(u - u_current, z1)) / (
+                2 * (lmbda - lmbda_current)
+                + 2 * theta ** 2 * problem.inner(u - u_current, z2)
             )
 
         du = z1 + dlmbda * z2
