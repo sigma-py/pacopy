@@ -1,4 +1,4 @@
-VERSION=$(shell python3 -c "import pycont; print(pycont.__version__)")
+VERSION=$(shell python3 -c "import pacopy; print(pacopy.__version__)")
 
 default:
 	@echo "\"make publish\"?"
@@ -25,8 +25,8 @@ clean:
 	@rm -rf *.egg-info/ build/ dist/ MANIFEST .pytest_cache/
 
 black:
-	black setup.py pycont/ test/*.py
+	black setup.py pacopy/ test/*.py
 
 lint:
-	black --check setup.py pycont/ test/*.py
-	flake8 setup.py pycont/ test/*.py
+	black --check setup.py pacopy/ test/*.py
+	flake8 setup.py pacopy/ test/*.py

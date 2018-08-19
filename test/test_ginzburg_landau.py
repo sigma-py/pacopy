@@ -11,7 +11,7 @@ import meshzoo
 import meshplex
 import pyfvm
 
-import pycont
+import pacopy
 
 
 class Energy(object):
@@ -202,8 +202,8 @@ def test_ginzburg_landau():
         )
         return
 
-    # pycont.natural(problem, u0, b0, callback, max_steps=100)
-    pycont.euler_newton(problem, u0, b0, callback, max_steps=300, stepsize0=1.0e-2)
+    # pacopy.natural(problem, u0, b0, callback, max_steps=100)
+    pacopy.euler_newton(problem, u0, b0, callback, max_steps=300, stepsize0=1.0e-2)
     return
 
 

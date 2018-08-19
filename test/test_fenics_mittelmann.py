@@ -18,7 +18,7 @@ from dolfin import (
     Point,
 )
 
-import pycont
+import pacopy
 
 
 class Mittelmann(object):
@@ -99,8 +99,8 @@ def test_bratu_fenics():
         fig.canvas.flush_events()
         return
 
-    # pycont.natural(problem, u0, lmbda0, callback, max_steps=100)
-    pycont.euler_newton(problem, u0, lmbda0, callback, max_steps=500)
+    # pacopy.natural(problem, u0, lmbda0, callback, max_steps=100)
+    pacopy.euler_newton(problem, u0, lmbda0, callback, max_steps=500)
     return
 
 

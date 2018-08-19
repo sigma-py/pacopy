@@ -5,7 +5,7 @@ import scipy.sparse
 import scipy.sparse.linalg
 import numpy
 
-import pycont
+import pacopy
 
 
 class Bratu1d(object):
@@ -56,7 +56,7 @@ class Bratu1d(object):
         return scipy.sparse.linalg.spsolve(M.tocsr(), rhs)
 
 
-def test_pycont():
+def test_pacopy():
     problem = Bratu1d()
     u0 = numpy.zeros(problem.n)
     lmbda0 = 0.0
@@ -83,10 +83,10 @@ def test_pycont():
         fig.canvas.flush_events()
         return
 
-    # pycont.natural(problem, u0, lmbda0, callback, max_steps=100)
-    pycont.euler_newton(problem, u0, lmbda0, callback, max_steps=500)
+    # pacopy.natural(problem, u0, lmbda0, callback, max_steps=100)
+    pacopy.euler_newton(problem, u0, lmbda0, callback, max_steps=500)
     return
 
 
 if __name__ == "__main__":
-    test_pycont()
+    test_pacopy()

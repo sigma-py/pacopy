@@ -11,7 +11,7 @@ import meshplex
 import pyfvm
 from pyfvm.form_language import integrate, n_dot_grad, dS, Boundary
 
-import pycont
+import pacopy
 
 
 # Just quickly get the diffusion matrix
@@ -159,8 +159,8 @@ def test_brusselator2d():
         )
         return
 
-    # pycont.natural(problem, u0, b0, callback, max_steps=100)
-    pycont.euler_newton(problem, u0, b0, callback, max_steps=300)
+    # pacopy.natural(problem, u0, b0, callback, max_steps=100)
+    pacopy.euler_newton(problem, u0, b0, callback, max_steps=300)
     return
 
 

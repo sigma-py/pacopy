@@ -1,25 +1,25 @@
-# pycont
+# pacopy
 
-[![CircleCI](https://img.shields.io/circleci/project/github/nschloe/pycont/master.svg)](https://circleci.com/gh/nschloe/pycont/tree/master)
-[![codecov](https://img.shields.io/codecov/c/github/nschloe/pycont.svg)](https://codecov.io/gh/nschloe/pycont)
+[![CircleCI](https://img.shields.io/circleci/project/github/nschloe/pacopy/master.svg)](https://circleci.com/gh/nschloe/pacopy/tree/master)
+[![codecov](https://img.shields.io/codecov/c/github/nschloe/pacopy.svg)](https://codecov.io/gh/nschloe/pacopy)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
-[![PyPi Version](https://img.shields.io/pypi/v/pycont.svg)](https://pypi.org/project/pycont)
-[![GitHub stars](https://img.shields.io/github/stars/nschloe/pycont.svg?logo=github&label=Stars&logoColor=white)](https://github.com/nschloe/pycont)
+[![PyPi Version](https://img.shields.io/pypi/v/pacopy.svg)](https://pypi.org/project/pacopy)
+[![GitHub stars](https://img.shields.io/github/stars/nschloe/pacopy.svg?logo=github&label=Stars&logoColor=white)](https://github.com/nschloe/pacopy)
 
 [Numerical continuation](https://en.wikipedia.org/wiki/Numerical_continuation) in Python.
 
 ### Installation
 
-pycont is [available from the Python Package
-Index](https://pypi.org/project/pycont/), so simply type
+pacopy is [available from the Python Package
+Index](https://pypi.org/project/pacopy/), so simply type
 ```
-pip install -U pycont
+pip install -U pacopy
 ```
 to install or upgrade.
 
 ### Testing
 
-To run the pycont unit tests, check out this repository and type
+To run the pacopy unit tests, check out this repository and type
 ```
 pytest
 ```
@@ -37,4 +37,4 @@ To create a new release
 
 ### License
 
-pycont is published under the [MIT license](https://en.wikipedia.org/wiki/MIT_License).
+pacopy is published under the [MIT license](https://en.wikipedia.org/wiki/MIT_License).
