@@ -4,8 +4,8 @@ import math
 
 import matplotlib.pyplot as plt
 from dolfin import (
-    IntervalMesh,
-    # UnitSquareMesh,
+    # IntervalMesh,
+    UnitSquareMesh,
     FunctionSpace,
     dx,
     assemble,
@@ -17,6 +17,7 @@ from dolfin import (
     exp,
     Function,
     solve,
+    XDMFFile
 )
 
 import pacopy
@@ -24,10 +25,10 @@ import pacopy
 
 class Bratu(object):
     def __init__(self):
-        mesh = IntervalMesh(20, 0, 1)
-        # mesh = UnitSquareMesh(20, 20)
+        # self.mesh = IntervalMesh(20, 0, 1)
+        self.mesh = UnitSquareMesh(20, 20, "left/right")
 
-        self.V = FunctionSpace(mesh, "Lagrange", 1)
+        self.V = FunctionSpace(self.mesh, "Lagrange", 1)
 
         self.bc = DirichletBC(self.V, 0.0, "on_boundary")
 
@@ -100,6 +101,11 @@ def test_bratu_fenics():
         ax.set_ylim(0.0, 6.0)
         fig.canvas.draw()
         fig.canvas.flush_events()
+
+        f = XDMFFile("sol{:03d}.xdmf".format(k))
+        u = Function(problem.V)
+        u.vector()[:] = sol
+        f.write(u)
         return
 
     # pacopy.natural(problem, u0, lmbda0, callback, max_steps=100)
