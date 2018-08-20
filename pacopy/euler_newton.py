@@ -39,11 +39,10 @@ def euler_newton(
     verbose=True,
     newton_tol=1.0e-11,
     newton_max_steps=5,
-    predictor="secant",
+    predictor="tangent",
     corrector_variant="secant",
     #
-    stepsize0=1.0e-1,
-    stepsize_min=1.0e-2,
+    stepsize0=1.0e0,
     stepsize_max=1.0e0,
     stepsize_aggressiveness=2,
 ):
@@ -69,11 +68,10 @@ def euler_newton(
         print("No convergence for initial step.".format(lmbda))
         raise e
 
-    callback(k, lmbda, u)
+    callback(k, lmbda, u, lmbda, u)
     k += 1
 
     ds = stepsize0
-
     u_prev = None
     lmbda_prev = None
     u_current = u.copy()
@@ -108,16 +106,17 @@ def euler_newton(
             )
         )
 
+        if verbose:
+            print()
+            print("Step {}, stepsize: {:.3e}".format(k, ds))
+
         # Predictor
         u = u_current + du_ds * ds
         lmbda = lmbda_current + dlmbda_ds * ds
 
-        if verbose:
-            print(
-                "Step {} (predictor): stepsize: {:.3e}".format(
-                    k, ds
-                )
-            )
+        # for debugging
+        u_corr = u.copy()
+        lmbda_corr = lmbda
 
         # Newton corrector
         u, lmbda, num_newton_steps, newton_success = _newton_corrector(
@@ -141,8 +140,9 @@ def euler_newton(
                 + stepsize_aggressiveness
                 * ((newton_max_steps - num_newton_steps) / (newton_max_steps - 1)) ** 2
             )
+            ds = min(stepsize_max, ds)
         else:
-            print("Newton convergence failure! Restart with smaller step size.\n")
+            print("Newton convergence failure! Restart with smaller step size.")
             ds *= 0.5
             continue
 
@@ -163,7 +163,7 @@ def euler_newton(
                 theta = min(theta, 1.0e8)
             print("new theta: {:.3e}".format(theta))
 
-        callback(k, lmbda, u)
+        callback(k, lmbda, u, lmbda_corr, u_corr)
         k += 1
         u_prev = u_current
         lmbda_prev = lmbda_current
@@ -173,17 +173,16 @@ def euler_newton(
         # Approximate dlmbda/ds and du/ds for the next predictor step
         if predictor == "tangent":
             # tangent predictor (like in natural continuation)
-            # not working at turning points
             du_dlmbda = problem.jacobian_solver(
                 u_current, lmbda_current, -problem.df_dlmbda(u_current, lmbda_current)
             )
             dlmbda_ds = 1.0
-            du_ds = du_dlmbda * dlmbda_ds
             # Make sure the sign of dlambda_ds is correct
             r = theta ** 2 * problem.inner(du_dlmbda, u_current - u_prev) + (
                 lmbda_current - lmbda_prev
             )
             dlmbda_ds = abs(dlmbda_ds) if r > 0 else -abs(dlmbda_ds)
+            du_ds = du_dlmbda * dlmbda_ds
         else:
             # secant predictor
             assert predictor == "secant"
