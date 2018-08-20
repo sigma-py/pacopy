@@ -63,22 +63,35 @@ def test_pacopy():
 
     plt.ion()
     fig = plt.figure()
-    ax = fig.add_subplot(111)
-    plt.axis("square")
-    plt.xlabel("$\\lambda$")
-    plt.ylabel("$||u||_\\infty$")
-    plt.grid()
+    ax1 = fig.add_subplot(121)
+    ax1.axis("square")
+    ax1.set_xlabel("$\\lambda$")
+    ax1.set_ylabel("$||u||_2$")
+    ax1.grid()
+
+    ax2 = fig.add_subplot(122)
+    ax2.grid()
+
     lmbda_list = []
     values_list = []
-    line1, = ax.plot(lmbda_list, values_list, "-", color="#1f77f4")
+    line1, = ax1.plot(lmbda_list, values_list, "-", color="#1f77f4")
+
+    line2, = ax2.plot([], [], "-", color="#1f77f4")
+    line2.set_xdata(numpy.linspace(0.0, 1.0, problem.n))
 
     def callback(k, lmbda, sol):
         lmbda_list.append(lmbda)
         line1.set_xdata(lmbda_list)
-        values_list.append(numpy.max(numpy.abs(sol)))
+        # values_list.append(numpy.max(numpy.abs(sol)))
+        values_list.append(numpy.sqrt(problem.inner(sol, sol)))
         line1.set_ydata(values_list)
-        ax.set_xlim(0.0, 4.0)
-        ax.set_ylim(0.0, 6.0)
+        ax1.set_xlim(0.0, 4.0)
+        ax1.set_ylim(0.0, 6.0)
+
+        line2.set_ydata(sol)
+        ax2.set_xlim(0.0, 1.0)
+        ax2.set_ylim(0.0, 6.0)
+
         fig.canvas.draw()
         fig.canvas.flush_events()
         return
