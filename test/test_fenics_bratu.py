@@ -4,7 +4,6 @@ import math
 
 import matplotlib.pyplot as plt
 from dolfin import (
-    # IntervalMesh,
     UnitSquareMesh,
     FunctionSpace,
     dx,
@@ -25,8 +24,7 @@ import pacopy
 
 class Bratu(object):
     def __init__(self):
-        # self.mesh = IntervalMesh(20, 0, 1)
-        self.mesh = UnitSquareMesh(20, 20, "left/right")
+        self.mesh = UnitSquareMesh(50, 50, "left/right")
 
         self.V = FunctionSpace(self.mesh, "Lagrange", 1)
 
@@ -92,6 +90,9 @@ def test_bratu_fenics():
     values_list = []
     line1, = ax.plot(lmbda_list, values_list, "-", color="#1f77f4")
 
+    f = XDMFFile("sol.xdmf")
+    u = Function(problem.V)
+
     def callback(k, lmbda, sol):
         lmbda_list.append(lmbda)
         line1.set_xdata(lmbda_list)
@@ -102,10 +103,8 @@ def test_bratu_fenics():
         fig.canvas.draw()
         fig.canvas.flush_events()
 
-        f = XDMFFile("sol{:03d}.xdmf".format(k))
-        u = Function(problem.V)
         u.vector()[:] = sol
-        f.write(u)
+        f.write(u, k)
         return
 
     # pacopy.natural(problem, u0, lmbda0, callback, max_steps=100)
