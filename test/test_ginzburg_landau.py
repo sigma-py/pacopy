@@ -59,9 +59,7 @@ class EnergyPrime(object):
         nec = mesh.idx_hierarchy[..., cell_mask]
         X = mesh.node_coords[nec]
         edge_midpoint = 0.5 * (X[0] + X[1])
-        magnetic_potential = (
-            0.5 * numpy.cross(self.magnetic_field, edge_midpoint.T).T
-        )
+        magnetic_potential = 0.5 * numpy.cross(self.magnetic_field, edge_midpoint.T).T
 
         edge = X[1] - X[0]
         beta = numpy.einsum("ijk,ijk->ij", magnetic_potential.T, edge.T)
@@ -133,7 +131,12 @@ class GinzburgLandau(object):
                 # Add diagonal to avoid singularity for mu = 0.
                 diag = prec.diagonal()
                 cv = self.mesh.control_volumes
-                diag += cv.reshape(psi.shape) * self.g * 2.0 * (psi.real ** 2 + psi.imag ** 2)
+                diag += (
+                    cv.reshape(psi.shape)
+                    * self.g
+                    * 2.0
+                    * (psi.real ** 2 + psi.imag ** 2)
+                )
                 prec.setdiag(diag)
                 # TODO pyamg solve
                 out = spsolve(prec, phi)
@@ -141,10 +144,7 @@ class GinzburgLandau(object):
 
             num_unknowns = len(self.mesh.node_coords)
             return krypy.utils.LinearOperator(
-                (num_unknowns, num_unknowns),
-                complex,
-                dot=_apply,
-                dot_adj=_apply,
+                (num_unknowns, num_unknowns), complex, dot=_apply, dot_adj=_apply
             )
 
         def krypy_inner(a, b):
@@ -156,11 +156,7 @@ class GinzburgLandau(object):
         jac = jacobian(psi)
         prec = prec(psi)
         linear_system = LinearSystem(
-            A=jac,
-            b=rhs,
-            M=prec,
-            self_adjoint=True,
-            ip_B=krypy_inner,
+            A=jac, b=rhs, M=prec, self_adjoint=True, ip_B=krypy_inner
         )
         out = Gmres(linear_system, maxiter=1000, tol=1.0e-8)
         return out.xk[:, 0]

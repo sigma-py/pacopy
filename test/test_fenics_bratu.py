@@ -16,7 +16,7 @@ from dolfin import (
     exp,
     Function,
     solve,
-    XDMFFile
+    XDMFFile,
 )
 
 import pacopy
@@ -93,13 +93,18 @@ def test_bratu_fenics():
     f = XDMFFile("sol.xdmf")
     u = Function(problem.V)
 
-    def callback(k, lmbda, sol):
+    def callback(k, lmbda, sol, lmbda_pre, u_pre):
         lmbda_list.append(lmbda)
         line1.set_xdata(lmbda_list)
         values_list.append(math.sqrt(problem.inner(sol, sol)))
         line1.set_ydata(values_list)
         ax.set_xlim(0.0, 10.0)
         ax.set_ylim(0.0, 6.0)
+
+        import numpy
+
+        ax.plot([lmbda_pre], [numpy.sqrt(problem.inner(u_pre, u_pre))], ".r")
+
         fig.canvas.draw()
         fig.canvas.flush_events()
 

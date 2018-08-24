@@ -37,10 +37,10 @@ def euler_newton(
     callback,
     max_steps=100,
     verbose=True,
-    newton_tol=1.0e-11,
+    newton_tol=1.0e-14,
     newton_max_steps=5,
     predictor="tangent",
-    corrector_variant="secant",
+    corrector_variant="tangent",
     #
     stepsize0=1.0e0,
     stepsize_max=1.0e0,
@@ -176,12 +176,11 @@ def euler_newton(
             du_dlmbda = problem.jacobian_solver(
                 u_current, lmbda_current, -problem.df_dlmbda(u_current, lmbda_current)
             )
-            dlmbda_ds = 1.0
             # Make sure the sign of dlambda_ds is correct
             r = theta ** 2 * problem.inner(du_dlmbda, u_current - u_prev) + (
                 lmbda_current - lmbda_prev
             )
-            dlmbda_ds = abs(dlmbda_ds) if r > 0 else -abs(dlmbda_ds)
+            dlmbda_ds = 1.0 if r > 0 else -1.0
             du_ds = du_dlmbda * dlmbda_ds
         else:
             # secant predictor

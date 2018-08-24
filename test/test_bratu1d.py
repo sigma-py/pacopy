@@ -18,9 +18,8 @@ class Bratu1d(object):
         self.H[-1] = h / 2
 
         self.A = (
-            1.0
+            scipy.sparse.diags([-1.0, 2.0, -1.0], [-1, 0, 1], shape=(self.n, self.n))
             / h ** 2
-            * scipy.sparse.diags([1.0, -2.0, 1.0], [-1, 0, 1], shape=(self.n, self.n))
         )
         return
 
@@ -31,13 +30,13 @@ class Bratu1d(object):
         return numpy.dot(a, a)
 
     def f(self, u, lmbda):
-        out = self.A.dot(u) + lmbda * numpy.exp(u)
+        out = self.A.dot(u) - lmbda * numpy.exp(u)
         out[0] = u[0]
         out[-1] = u[-1]
         return out
 
     def df_dlmbda(self, u, lmbda):
-        out = numpy.exp(u)
+        out = -numpy.exp(u)
         out[0] = 0.0
         out[-1] = 0.0
         return out
@@ -45,7 +44,7 @@ class Bratu1d(object):
     def jacobian_solver(self, u, lmbda, rhs):
         M = self.A.copy()
         d = M.diagonal()
-        d += lmbda * numpy.exp(u)
+        d -= lmbda * numpy.exp(u)
         M.setdiag(d)
         # Dirichlet conditions
         assert numpy.all(M.offsets == [-1, 0, 1])
@@ -64,7 +63,6 @@ def test_pacopy():
     plt.ion()
     fig = plt.figure()
     ax1 = fig.add_subplot(121)
-    ax1.axis("square")
     ax1.set_xlabel("$\\lambda$")
     ax1.set_ylabel("$||u||_2$")
     ax1.grid()
@@ -74,12 +72,12 @@ def test_pacopy():
 
     lmbda_list = []
     values_list = []
-    line1, = ax1.plot(lmbda_list, values_list, "-", color="#1f77f4")
+    line1, = ax1.plot(lmbda_list, values_list, "-x", color="#1f77f4")
 
     line2, = ax2.plot([], [], "-", color="#1f77f4")
     line2.set_xdata(numpy.linspace(0.0, 1.0, problem.n))
 
-    def callback(k, lmbda, sol):
+    def callback(k, lmbda, sol, lmbda_pre, u_pre):
         lmbda_list.append(lmbda)
         line1.set_xdata(lmbda_list)
         # values_list.append(numpy.max(numpy.abs(sol)))
@@ -88,16 +86,25 @@ def test_pacopy():
         ax1.set_xlim(0.0, 4.0)
         ax1.set_ylim(0.0, 6.0)
 
+        ax1.plot([lmbda_pre], [numpy.sqrt(problem.inner(u_pre, u_pre))], ".r")
+
         line2.set_ydata(sol)
         ax2.set_xlim(0.0, 1.0)
         ax2.set_ylim(0.0, 6.0)
 
         fig.canvas.draw()
         fig.canvas.flush_events()
+
+        input("Press Enter to continue...")
         return
 
     # pacopy.natural(problem, u0, lmbda0, callback, max_steps=100)
-    pacopy.euler_newton(problem, u0, lmbda0, callback, max_steps=500)
+
+    # The condition number of the Jacobian is about 10^4, so we can only expect Newton
+    # to converge up to about this factor above machine precision.
+    pacopy.euler_newton(
+        problem, u0, lmbda0, callback, max_steps=500, newton_tol=1.0e-10
+    )
     return
 
 
