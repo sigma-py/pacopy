@@ -212,9 +212,6 @@ def _newton_corrector(
     num_newton_steps = 0
     newton_success = False
     while True:
-        if num_newton_steps > newton_max_steps:
-            break
-
         r = problem.f(u, lmbda)
         if corrector_variant == "tangent":
             q = (
@@ -238,6 +235,9 @@ def _newton_corrector(
         if problem.norm2_r(r) + q ** 2 < newton_tol ** 2:
             print("Newton corrector converged after {} steps.".format(num_newton_steps))
             newton_success = True
+            break
+
+        if num_newton_steps >= newton_max_steps:
             break
 
         z1 = problem.jacobian_solver(u, lmbda, -r)
