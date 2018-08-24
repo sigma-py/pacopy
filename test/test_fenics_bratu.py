@@ -24,7 +24,7 @@ import pacopy
 
 class Bratu(object):
     def __init__(self):
-        self.mesh = UnitSquareMesh(50, 50, "left/right")
+        self.mesh = UnitSquareMesh(40, 40, "left/right")
 
         self.V = FunctionSpace(self.mesh, "Lagrange", 1)
 
@@ -32,7 +32,7 @@ class Bratu(object):
 
         u = TrialFunction(self.V)
         v = TestFunction(self.V)
-        self.a = assemble(-dot(grad(u), grad(v)) * dx)
+        self.a = assemble(dot(grad(u), grad(v)) * dx)
         self.m = assemble(u * v * dx)
         return
 
@@ -46,7 +46,7 @@ class Bratu(object):
         v = TestFunction(self.V)
         ufun = Function(self.V)
         ufun.vector()[:] = u
-        out = self.a * u + lmbda * assemble(exp(ufun) * v * dx)
+        out = self.a * u - lmbda * assemble(exp(ufun) * v * dx)
         DirichletBC(self.V, ufun, "on_boundary").apply(out)
         return out
 
@@ -54,7 +54,7 @@ class Bratu(object):
         v = TestFunction(self.V)
         ufun = Function(self.V)
         ufun.vector()[:] = u
-        out = assemble(exp(ufun) * v * dx)
+        out = -assemble(exp(ufun) * v * dx)
         self.bc.apply(out)
         return out
 
@@ -63,14 +63,14 @@ class Bratu(object):
         v = TestFunction(self.V)
         # from dolfin import Constant
         # a = assemble(
-        #     -dot(grad(t), grad(v)) * dx + Constant(lmbda) * exp(u) * t * v * dx
+        #     dot(grad(t), grad(v)) * dx - Constant(lmbda) * exp(u) * t * v * dx
         # )
         ufun = Function(self.V)
         ufun.vector()[:] = u
-        a = self.a + lmbda * assemble(exp(ufun) * t * v * dx)
+        a = self.a - lmbda * assemble(exp(ufun) * t * v * dx)
         self.bc.apply(a)
         x = Function(self.V)
-        solve(a, x.vector(), rhs)
+        solve(a, x.vector(), rhs, "gmres", "ilu")
         return x.vector()
 
 
@@ -113,7 +113,9 @@ def test_bratu_fenics():
         return
 
     # pacopy.natural(problem, u0, lmbda0, callback, max_steps=100)
-    pacopy.euler_newton(problem, u0, lmbda0, callback, max_steps=500)
+    pacopy.euler_newton(
+        problem, u0, lmbda0, callback, max_steps=500, newton_tol=1.0e-10
+    )
     return
 
 

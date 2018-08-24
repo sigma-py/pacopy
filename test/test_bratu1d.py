@@ -76,8 +76,10 @@ def test_pacopy():
 
     line2, = ax2.plot([], [], "-", color="#1f77f4")
     line2.set_xdata(numpy.linspace(0.0, 1.0, problem.n))
+    line3, = ax2.plot([], [], "-", color="red")
+    line3.set_xdata(numpy.linspace(0.0, 1.0, problem.n))
 
-    def callback(k, lmbda, sol, lmbda_pre, u_pre):
+    def callback(k, lmbda, sol, lmbda_pre, u_pre, du_dlmbda):
         lmbda_list.append(lmbda)
         line1.set_xdata(lmbda_list)
         # values_list.append(numpy.max(numpy.abs(sol)))
@@ -89,6 +91,7 @@ def test_pacopy():
         ax1.plot([lmbda_pre], [numpy.sqrt(problem.inner(u_pre, u_pre))], ".r")
 
         line2.set_ydata(sol)
+        line3.set_ydata(du_dlmbda)
         ax2.set_xlim(0.0, 1.0)
         ax2.set_ylim(0.0, 6.0)
 

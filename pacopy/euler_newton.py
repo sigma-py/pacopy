@@ -45,6 +45,7 @@ def euler_newton(
     stepsize0=1.0e0,
     stepsize_max=1.0e0,
     stepsize_aggressiveness=2,
+    smoothness_factor=1.0,
 ):
     """Pseudo-arclength continuation, implemented in the style of LOCA
     <https://trilinos.org/packages/nox-and-loca/>, i.e., one doesn't solve a bordered
@@ -67,9 +68,6 @@ def euler_newton(
     except NewtonConvergenceError as e:
         print("No convergence for initial step.".format(lmbda))
         raise e
-
-    callback(k, lmbda, u, lmbda, u)
-    k += 1
 
     ds = stepsize0
     u_prev = None
@@ -94,6 +92,11 @@ def euler_newton(
     du_ds /= nrm
     dlmbda_ds /= nrm
 
+    du_ds_norm = math.sqrt(problem.inner(du_ds, du_ds))
+
+    callback(k, lmbda, u, lmbda, u, du_dlmbda)
+    k += 1
+
     while True:
         if k > max_steps:
             break
@@ -115,8 +118,8 @@ def euler_newton(
         lmbda = lmbda_current + dlmbda_ds * ds
 
         # for debugging
-        u_corr = u.copy()
-        lmbda_corr = lmbda
+        u_predictor = u.copy()
+        lmbda_predictor = lmbda
 
         # Newton corrector
         u, lmbda, num_newton_steps, newton_success = _newton_corrector(
@@ -149,7 +152,6 @@ def euler_newton(
         # Possibly rescale theta; see LOCA book
         # <http://www.cs.sandia.gov/loca/loca1.1_book.pdf>
         if dlmbda_ds ** 2 > lmbda_prime_max ** 2:
-            print("dlmbda_ds: {:.3e}".format(dlmbda_ds))
             if abs(dlmbda_ds ** 2 - 1.0) < 1.0e-15:
                 theta = 1.0e8
             else:
@@ -161,25 +163,23 @@ def euler_newton(
                     / dlmbda_ds_target2
                 )
                 theta = min(theta, 1.0e8)
-            print("new theta: {:.3e}".format(theta))
 
-        callback(k, lmbda, u, lmbda_corr, u_corr)
+        callback(k, lmbda, u, lmbda_predictor, u_predictor, du_dlmbda)
         k += 1
         u_prev = u_current
         lmbda_prev = lmbda_current
         u_current = u
         lmbda_current = lmbda
 
+        du_ds_prev = du_ds.copy()
+
         # Approximate dlmbda/ds and du/ds for the next predictor step
         if predictor == "tangent":
             # tangent predictor (like in natural continuation)
-            du_dlmbda = problem.jacobian_solver(
-                u_current, lmbda_current, -problem.df_dlmbda(u_current, lmbda_current)
-            )
+            #
+            du_dlmbda = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
             # Make sure the sign of dlambda_ds is correct
-            r = theta ** 2 * problem.inner(du_dlmbda, u_current - u_prev) + (
-                lmbda_current - lmbda_prev
-            )
+            r = theta ** 2 * problem.inner(du_dlmbda, u - u_prev) + (lmbda - lmbda_prev)
             dlmbda_ds = 1.0 if r > 0 else -1.0
             du_ds = du_dlmbda * dlmbda_ds
         else:
@@ -190,6 +190,22 @@ def euler_newton(
         nrm = math.sqrt(theta ** 2 * problem.inner(du_ds, du_ds) + dlmbda_ds ** 2)
         du_ds /= nrm
         dlmbda_ds /= nrm
+
+        du_ds_norm_prev = du_ds_norm
+        du_ds_norm = math.sqrt(problem.inner(du_ds, du_ds))
+
+        # LOCA book (2.25), with du/ds swapped in for du/dlmbda to make it compatible
+        # with the secant predictor. (Identical to LOCA if one uses tangent.)
+        # For most test problems, this factor seems to be very close to 1, so it doesn't
+        # really do anything.
+        # TODO find out if this is useful at all
+        tangent_factor = (
+            problem.inner(du_ds, du_ds_prev)
+            / du_ds_norm
+            / du_ds_norm_prev
+        )
+        assert tangent_factor > 0
+        ds *= tangent_factor ** smoothness_factor
 
     return None
 
