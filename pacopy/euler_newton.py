@@ -42,10 +42,12 @@ def euler_newton(
     predictor="tangent",
     corrector_variant="tangent",
     #
-    stepsize0=1.0e0,
-    stepsize_max=1.0e0,
+    stepsize0=5.0e-1,
+    stepsize_max=5.0e-1,
     stepsize_aggressiveness=2,
-    smoothness_factor=1.0,
+    smoothness_factor=3.0,
+    lmbda_prime_max=0.0,  # threshold after which theta is rescaled
+    dlmbda_ds_target2=0.5,  # square of the target for dlmbda_ds
 ):
     """Pseudo-arclength continuation, implemented in the style of LOCA
     <https://trilinos.org/packages/nox-and-loca/>, i.e., one doesn't solve a bordered
@@ -75,10 +77,6 @@ def euler_newton(
     u_current = u.copy()
     lmbda_current = lmbda
 
-    # threshold after which theta is rescaled
-    lmbda_prime_max = 0.0
-    # square of the target for dlmbda_ds
-    dlmbda_ds_target2 = 0.5
     theta = 1.0
 
     # tangent predictor for the first step
@@ -88,7 +86,13 @@ def euler_newton(
     # One could optionally use a negative sign here
     dlmbda_ds = 1.0
     du_ds = du_dlmbda * dlmbda_ds
-    nrm = math.sqrt(theta ** 2 * problem.inner(du_ds, du_ds) + dlmbda_ds ** 2)
+
+    duds2 = problem.inner(du_ds, du_ds)
+    theta = math.sqrt(
+        (dlmbda_ds ** 2 / dlmbda_ds_target2) * (1 - dlmbda_ds_target2) / duds2
+    )
+
+    nrm = math.sqrt(theta ** 2 * duds2 + dlmbda_ds ** 2)
     du_ds /= nrm
     dlmbda_ds /= nrm
 
@@ -101,13 +105,9 @@ def euler_newton(
         if k > max_steps:
             break
 
-        print(
-            "Compare: {:.3e}  {:.3e}  {:.3e}".format(
-                dlmbda_ds ** 2,
-                theta ** 2 * problem.inner(du_ds, du_ds),
-                dlmbda_ds ** 2 + theta ** 2 * problem.inner(du_ds, du_ds),
-            )
-        )
+        print("theta", theta)
+        print("<du/ds, du/ds>", problem.inner(du_ds, du_ds))
+        print("dlmbda/ds ** 2", dlmbda_ds ** 2)
 
         if verbose:
             print()
@@ -137,32 +137,25 @@ def euler_newton(
             newton_tol,
         )
 
-        if newton_success:
-            ds *= (
-                1
-                + stepsize_aggressiveness
-                * ((newton_max_steps - num_newton_steps) / (newton_max_steps - 1)) ** 2
-            )
-            ds = min(stepsize_max, ds)
-        else:
+        if not newton_success:
             print("Newton convergence failure! Restart with smaller step size.")
             ds *= 0.5
             continue
 
-        # Possibly rescale theta; see LOCA book
-        # <http://www.cs.sandia.gov/loca/loca1.1_book.pdf>
-        if dlmbda_ds ** 2 > lmbda_prime_max ** 2:
-            if abs(dlmbda_ds ** 2 - 1.0) < 1.0e-15:
-                theta = 1.0e8
-            else:
-                # LOCA book, eq. (2.23)
-                theta *= math.sqrt(
-                    dlmbda_ds ** 2
-                    / (1 - dlmbda_ds ** 2)
-                    * (1 - dlmbda_ds_target2)
-                    / dlmbda_ds_target2
-                )
-                theta = min(theta, 1.0e8)
+        # # Possibly rescale theta; see LOCA book
+        # # <http://www.cs.sandia.gov/loca/loca1.1_book.pdf>
+        # if dlmbda_ds ** 2 > lmbda_prime_max ** 2:
+        #     if abs(dlmbda_ds ** 2 - 1.0) < 1.0e-15:
+        #         theta = 1.0e8
+        #     else:
+        #         # LOCA book, eq. (2.23)
+        #         theta *= math.sqrt(
+        #             dlmbda_ds ** 2
+        #             / (1 - dlmbda_ds ** 2)
+        #             * (1 - dlmbda_ds_target2)
+        #             / dlmbda_ds_target2
+        #         )
+        #         theta = min(theta, 1.0e8)
 
         callback(k, lmbda, u, lmbda_predictor, u_predictor, du_dlmbda)
         k += 1
@@ -172,6 +165,7 @@ def euler_newton(
         lmbda_current = lmbda
 
         du_ds_prev = du_ds.copy()
+        dlmbda_ds_prev = dlmbda_ds
 
         # Approximate dlmbda/ds and du/ds for the next predictor step
         if predictor == "tangent":
@@ -187,25 +181,47 @@ def euler_newton(
             assert predictor == "secant"
             du_ds = (u_current - u_prev) / ds
             dlmbda_ds = (lmbda_current - lmbda_prev) / ds
-        nrm = math.sqrt(theta ** 2 * problem.inner(du_ds, du_ds) + dlmbda_ds ** 2)
+
+        duds2 = problem.inner(du_ds, du_ds)
+        theta = math.sqrt(
+            (dlmbda_ds ** 2 / dlmbda_ds_target2) * (1 - dlmbda_ds_target2) / duds2
+        )
+
+        nrm = math.sqrt(theta ** 2 * duds2 + dlmbda_ds ** 2)
         du_ds /= nrm
         dlmbda_ds /= nrm
 
         du_ds_norm_prev = du_ds_norm
         du_ds_norm = math.sqrt(problem.inner(du_ds, du_ds))
 
-        # LOCA book (2.25), with du/ds swapped in for du/dlmbda to make it compatible
-        # with the secant predictor. (Identical to LOCA if one uses tangent.)
-        # For most test problems, this factor seems to be very close to 1, so it doesn't
-        # really do anything.
-        # TODO find out if this is useful at all
-        tangent_factor = (
-            problem.inner(du_ds, du_ds_prev)
-            / du_ds_norm
-            / du_ds_norm_prev
+        # tangent_factor2 = (
+        #     (du_ds_norm_prev * du_ds_norm + dlmbda_ds_prev * dlmbda_ds)
+        #     / math.sqrt(du_ds_norm_prev ** 2 + dlmbda_ds_prev ** 2)
+        #     / math.sqrt(du_ds_norm ** 2 + dlmbda_ds ** 2)
+        # )
+
+        # tangent_factor3 = (
+        #     theta ** 2 * du_ds_norm_prev * du_ds_norm + dlmbda_ds_prev * dlmbda_ds
+        # )
+
+        # # LOCA book (2.25), with du/ds swapped in for du/dlmbda to make it compatible
+        # # with the secant predictor. (Identical to LOCA if one uses tangent.)
+        # # For most test problems, this factor seems to be very close to 1, so it doesn't
+        # # really do very much.
+        # # TODO find out if this is useful at all
+        # tangent_factor = problem.inner(du_ds, du_ds_prev) / du_ds_norm / du_ds_norm_prev
+        # print("tf", tangent_factor, tangent_factor2, tangent_factor3)
+        # assert tangent_factor > 0
+        # ds *= tangent_factor2 ** smoothness_factor
+
+        # Stepsize update
+        ds *= (
+            1
+            + stepsize_aggressiveness
+            * ((newton_max_steps - num_newton_steps) / (newton_max_steps - 1)) ** 2
         )
-        assert tangent_factor > 0
-        ds *= tangent_factor ** smoothness_factor
+        ds = min(stepsize_max, ds)
+        input("Press Enter to continue...")
 
     return None
 
