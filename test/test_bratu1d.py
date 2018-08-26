@@ -97,8 +97,6 @@ def test_pacopy():
 
         fig.canvas.draw()
         fig.canvas.flush_events()
-
-        input("Press Enter to continue...")
         return
 
     # pacopy.natural(problem, u0, lmbda0, callback, max_steps=100)

@@ -70,7 +70,8 @@ class Bratu(object):
         a = self.a - lmbda * assemble(exp(ufun) * t * v * dx)
         self.bc.apply(a)
         x = Function(self.V)
-        solve(a, x.vector(), rhs, "gmres", "ilu")
+        # solve(a, x.vector(), rhs, "gmres", "ilu")
+        solve(a, x.vector(), rhs)
         return x.vector()
 
 
@@ -93,7 +94,7 @@ def test_bratu_fenics():
     f = XDMFFile("sol.xdmf")
     u = Function(problem.V)
 
-    def callback(k, lmbda, sol, lmbda_pre, u_pre):
+    def callback(k, lmbda, sol, lmbda_pre, u_pre, du_dlmbda):
         lmbda_list.append(lmbda)
         line1.set_xdata(lmbda_list)
         values_list.append(math.sqrt(problem.inner(sol, sol)))
