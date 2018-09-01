@@ -9,7 +9,6 @@ def natural(
     lambda0,
     callback,
     lambda_stepsize0=1.0e-1,
-    lambda_stepsize_min=1.0e-2,
     lambda_stepsize_max=1.0e0,
     lambda_stepsize_aggressiveness=2,
     newton_max_steps=5,
@@ -75,9 +74,6 @@ def natural(
                 print("No convergence for lambda={}.".format(lmbda))
             lmbda -= lambda_stepsize
             lambda_stepsize /= 2
-            assert lambda_stepsize > lambda_stepsize_min, (
-                "Lambda step size ({:.3e}) fell below the minimum ({:.3e})"
-            ).format(lambda_stepsize, lambda_stepsize_min)
             continue
 
         lambda_stepsize *= (

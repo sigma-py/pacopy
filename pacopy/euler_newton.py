@@ -103,10 +103,6 @@ def euler_newton(
             print()
             print("Step {}, stepsize: {:.3e}".format(k, ds))
 
-        print("theta", theta)
-        print("<du/ds, du/ds>", problem.inner(du_ds_current, du_ds_current))
-        print("dlmbda/ds ** 2", dlmbda_ds_current ** 2)
-
         # Predictor
         u = u_current + du_ds_current * ds
         lmbda = lmbda_current + dlmbda_ds_current * ds
