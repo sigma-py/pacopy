@@ -66,26 +66,28 @@ class EnergyPrime(object):
 
         # project the magnetic potential on the edge at the midpoint
         magnetic_potential = 0.5 * numpy.cross(self.magnetic_field, edge_midpoint)
-
-        # The dot product <magnetic_potential, edge>, executed for many
-        # points at once; cf. <http://stackoverflow.com/a/26168677/353337>.
+        # <m, edge>
         beta = numpy.einsum("...k,...k->...", magnetic_potential, edge)
 
+        zero = numpy.zeros(edge_ce_ratio.shape, dtype=complex)
         return numpy.array(
             [
-                [edge_ce_ratio, 1j * edge_ce_ratio * numpy.exp(-1j * beta)],
-                [-1j * edge_ce_ratio * numpy.exp(1j * beta), edge_ce_ratio],
+                [zero, 1j * edge_ce_ratio * numpy.exp(-1j * beta)],
+                [-1j * edge_ce_ratio * numpy.exp(1j * beta), zero],
             ]
         )
 
 
 class GinzburgLandau(object):
     def __init__(self):
-        points, cells = meshzoo.rectangle(-5.0, 5.0, -5.0, 5.0, 40, 40)
+        points, cells = meshzoo.rectangle(-5.0, 5.0, -5.0, 5.0, 50, 50)
         self.mesh = meshplex.MeshTri(points, cells)
 
         self.V = -1.0
         self.g = 1.0
+
+        import matplotlib.pyplot as plt
+        self.fig1, self.ax1 = plt.subplots()
         return
 
     def inner(self, x, y):
@@ -99,23 +101,41 @@ class GinzburgLandau(object):
     def f(self, psi, mu):
         keo = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
         cv = self.mesh.control_volumes
-        return keo * psi + cv * psi * (self.V + self.g * numpy.abs(psi) ** 2)
+        return (keo * psi) / cv + psi * (self.V + self.g * numpy.abs(psi) ** 2)
 
     def df_dlmbda(self, psi, mu):
         keo_prime = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[EnergyPrime(mu)])
         return keo_prime * psi
 
+    def jacobian(self, psi, mu):
+        keo = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
+
+        def _apply_jacobian(phi):
+            y = (keo * phi / cv) + alpha * phi + gPsi0Squared * phi.conj()
+            return y
+
+        cv = self.mesh.control_volumes
+        alpha = self.V + self.g * 2.0 * (psi.real ** 2 + psi.imag ** 2)
+        gPsi0Squared = self.g * psi ** 2
+
+        num_unknowns = len(self.mesh.node_coords)
+        return pykry.LinearOperator(
+            (num_unknowns, num_unknowns),
+            complex,
+            dot=_apply_jacobian,
+            dot_adj=_apply_jacobian,
+        )
+
     def jacobian_solver(self, psi, mu, rhs):
         keo = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
+        cv = self.mesh.control_volumes
 
         def jacobian(psi):
             def _apply_jacobian(phi):
-                cv = self.mesh.control_volumes
-                y = keo * phi + cv * alpha * phi + cv * gPsi0Squared * phi.conj()
-                return y
+                return (keo * phi) / cv + alpha * phi + beta * phi.conj()
 
             alpha = self.V + self.g * 2.0 * (psi.real ** 2 + psi.imag ** 2)
-            gPsi0Squared = self.g * psi ** 2
+            beta = self.g * psi ** 2
 
             num_unknowns = len(self.mesh.node_coords)
             return pykry.LinearOperator(
@@ -125,29 +145,89 @@ class GinzburgLandau(object):
                 dot_adj=_apply_jacobian,
             )
 
+        def prec_inv(psi):
+            prec = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
+            # Add diagonal to avoid singularity for mu = 0. Also, this is a better
+            # preconditioner.
+            diag = prec.diagonal()
+            diag += self.g * 2.0 * (psi.real ** 2 + psi.imag ** 2) * cv
+            prec.setdiag(diag)
+            return prec
+
         def prec(psi):
+            p = prec_inv(psi)
+
             def _apply(phi):
-                prec = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
-                # Add diagonal to avoid singularity for mu = 0.
-                diag = prec.diagonal()
-                cv = self.mesh.control_volumes
-                diag += cv * self.g * 2.0 * (psi.real ** 2 + psi.imag ** 2)
-                prec.setdiag(diag)
                 # TODO pyamg solve
-                out = spsolve(prec, phi)
-                return out.reshape(phi.shape)
+                out = spsolve(p, phi)
+                return out
 
             num_unknowns = len(self.mesh.node_coords)
             return pykry.LinearOperator(
                 (num_unknowns, num_unknowns), complex, dot=_apply, dot_adj=_apply
             )
 
+        # The right-hand side for the Jacobian solver is always f(psi) or
+        # df/dlmbda(psi). Its inner product with i*psi is always 0. We project out that
+        # component numerically to avoid convergence failure for the Newton iterations
+        # close to a solution. If this is not done, the Krylov method might hang at
+        # something like 10^{-7}.
+        # TODO replace jacobian_solver with something like solve_newton_system to
+        # guarantee that the rhs = f(psi).
+        i_psi = 1j * psi
+        rhs -= self.inner(i_psi, rhs) / self.inner(i_psi, i_psi) * i_psi
+
         jac = jacobian(psi)
-        prec = prec(psi)
         out = pykry.gmres(
-            A=jac, b=rhs, M=prec, inner_product=self.inner, maxiter=1000, tol=1.0e-8
+            A=jac,
+            b=rhs,
+            M=prec(psi),
+            inner_product=self.inner,
+            maxiter=100,
+            tol=1.0e-13,
+            Minv=prec_inv(psi),
+            # U=1j * psi,
         )
+        print("Krylov iterations:", out.iter)
+        print("Krylov residual:", out.resnorms[-1])
+
+        self.ax1.semilogy(out.resnorms)
+        self.ax1.grid()
+        plt.show()
+        input("Press")
+        # exit(1)
         return out.xk
+
+
+def test_self_adjointness():
+    problem = GinzburgLandau()
+    n = problem.mesh.control_volumes.shape[0]
+    psi = numpy.random.rand(n) + 1j * numpy.random.rand(n)
+    jac = problem.jacobian(psi, 0.1)
+
+    for _ in range(1000):
+        u = numpy.random.rand(n) + 1j * numpy.random.rand(n)
+        v = numpy.random.rand(n) + 1j * numpy.random.rand(n)
+        a0 = problem.inner(u, jac * v)
+        a1 = problem.inner(jac * u, v)
+        assert abs(a0 - a1) < 1.0e-12
+
+    return
+
+
+def test_f_i_psi():
+    """Assert that <f(psi), i psi> == 0.
+    """
+    problem = GinzburgLandau()
+    n = problem.mesh.control_volumes.shape[0]
+    mu = 0.1
+
+    for _ in range(100):
+        psi = numpy.random.rand(n) + 1j * numpy.random.rand(n)
+        f = problem.f(psi, mu)
+        assert abs(problem.inner(1j * psi, f)) < 1.0e-13
+
+    return
 
 
 def test_ginzburg_landau():
@@ -167,6 +247,7 @@ def test_ginzburg_landau():
     values_list = []
     line1, = ax.plot(b_list, values_list, "-", color="#1f77f4")
 
+    # def callback(k, b, sol):
     def callback(k, b, sol, a_, b_, c_):
         print(problem.inner(sol, sol))
         b_list.append(b)
@@ -187,19 +268,23 @@ def test_ginzburg_landau():
         )
         return
 
-    pacopy.natural(
-        problem,
-        u0,
-        b0,
-        callback,
-        max_steps=100,
-        lambda_stepsize0=1.0e-2,
-        newton_max_steps=5,
-        newton_tol=1.0e-10,
+    # pacopy.natural(
+    #     problem,
+    #     u0,
+    #     b0,
+    #     callback,
+    #     max_steps=1000,
+    #     lambda_stepsize0=1.0e-2,
+    #     newton_max_steps=5,
+    #     newton_tol=1.0e-10,
+    # )
+    pacopy.euler_newton(
+        problem, u0, b0, callback, max_steps=10, stepsize0=1.0e-2, newton_tol=1.0e-10
     )
-    # pacopy.euler_newton(problem, u0, b0, callback, max_steps=100, stepsize0=1.0e-2)
     return
 
 
 if __name__ == "__main__":
+    # test_self_adjointness()
+    # test_f_i_psi()
     test_ginzburg_landau()
