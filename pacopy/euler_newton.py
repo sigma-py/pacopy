@@ -43,9 +43,9 @@ def euler_newton(
     corrector_variant="tangent",
     #
     stepsize0=5.0e-1,
-    stepsize_max=5.0e-1,
+    stepsize_max=float("inf"),
     stepsize_aggressiveness=2,
-    smoothness_factor=1.0,
+    cos_alpha_min=0.9,
     dlmbda_ds_target2=0.5,  # square of the target for dlmbda_ds
 ):
     """Pseudo-arclength continuation, implemented in the style of LOCA
@@ -208,7 +208,6 @@ def euler_newton(
         #
         # When removing the "+1"s, this is the expression that is used in LOCA (equation
         # (2.25) in the LOCA book).
-        cos_alpha_min = 0.0
         if cos_alpha < cos_alpha_min:
             print((
                 "Angle between subsequent predictors too large (cos(alpha) = {} < {}). "
@@ -239,8 +238,6 @@ def euler_newton(
         k += 1
 
         # Stepsize update
-        # assert cos_alpha > 0.0
-        # ds *= cos_alpha ** smoothness_factor
         ds *= (
             1
             + stepsize_aggressiveness
@@ -333,8 +330,8 @@ def _newton_corrector(
             )
             du = z1 + dlmbda * z2
 
-            f0 = problem.jacobian(u, lmbda) * du + problem.df_dlmbda(u, lmbda) * dlmbda + r
-            f1 = 2 * theta ** 2 * problem.inner(u - u_current, du) + 2 * (lmbda - lmbda_current) * dlmbda + q
+            # f0 = problem.jacobian(u, lmbda) * du + problem.df_dlmbda(u, lmbda) * dlmbda + r
+            # f1 = 2 * theta ** 2 * problem.inner(u - u_current, du) + 2 * (lmbda - lmbda_current) * dlmbda + q
             # print("residuals", math.sqrt(problem.norm2_r(f0)), f1)
 
         u += du

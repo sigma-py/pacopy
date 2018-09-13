@@ -336,7 +336,7 @@ def test_ginzburg_landau():
     # )
     pacopy.euler_newton(
         problem, u0, b0, callback, max_steps=1000, stepsize0=1.0e-2,
-        stepsize_max=5.0e-1, newton_tol=1.0e-10
+        stepsize_max=5.0e0, newton_tol=1.0e-10
     )
     return
 
