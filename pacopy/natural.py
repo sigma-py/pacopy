@@ -13,7 +13,7 @@ def natural(
     lambda_stepsize_aggressiveness=2,
     newton_max_steps=5,
     newton_tol=1.0e-12,
-    max_steps=100,
+    max_steps=float("inf"),
     verbose=True,
     first_order_predictor=True,
 ):

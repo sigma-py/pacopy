@@ -87,9 +87,8 @@ class EnergyPrime(object):
 
 
 class GinzburgLandau(object):
-    def __init__(self):
-        points, cells = meshzoo.rectangle(-5.0, 5.0, -5.0, 5.0, 30, 30)
-        self.mesh = meshplex.MeshTri(points, cells)
+    def __init__(self, mesh):
+        self.mesh = mesh
 
         self.V = -1.0
         self.g = 1.0
@@ -128,25 +127,6 @@ class GinzburgLandau(object):
         out -= self.inner(i_psi, out) / self.inner(i_psi, i_psi) * i_psi
         return out
 
-    def jacobian(self, psi, mu):
-        keo = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
-
-        def _apply_jacobian(phi):
-            y = (keo * phi / cv) + alpha * phi + gPsi0Squared * phi.conj()
-            return y
-
-        cv = self.mesh.control_volumes
-        alpha = self.V + self.g * 2.0 * (psi.real ** 2 + psi.imag ** 2)
-        gPsi0Squared = self.g * psi ** 2
-
-        num_unknowns = len(self.mesh.node_coords)
-        return pykry.LinearOperator(
-            (num_unknowns, num_unknowns),
-            complex,
-            dot=_apply_jacobian,
-            dot_adj=_apply_jacobian,
-        )
-
     def jacobian_solver(self, psi, mu, rhs):
         keo = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
         cv = self.mesh.control_volumes
@@ -179,7 +159,8 @@ class GinzburgLandau(object):
             p = prec_inv(psi)
 
             def _apply(phi):
-                # TODO pyamg solve
+                # ml = pyamg.smoothed_aggregation_solver(p, phi)
+                # out = ml.solve(b=phi, tol=1e-12)
                 out = spsolve(p, phi)
                 return out
 
@@ -227,9 +208,6 @@ class GinzburgLandau(object):
         # i_psi = 1j * psi
         # out.xk -= self.inner(i_psi, out.xk) / self.inner(i_psi, i_psi) * i_psi
         # print("solution component i*psi", self.inner(i_psi, out.xk) / numpy.sqrt(self.inner(i_psi, i_psi)))
-
-        # input("Press")
-        # exit(1)
         return out.xk
 
 
@@ -269,7 +247,10 @@ def test_f_i_psi():
 
 
 def test_df_dlmbda():
-    problem = GinzburgLandau()
+    points, cells = meshzoo.rectangle(-5.0, 5.0, -5.0, 5.0, 30, 30)
+    mesh = meshplex.MeshTri(points, cells)
+
+    problem = GinzburgLandau(mesh)
     n = problem.mesh.control_volumes.shape[0]
     numpy.random.seed(0)
 
@@ -288,7 +269,11 @@ def test_df_dlmbda():
 
 
 def test_ginzburg_landau():
-    problem = GinzburgLandau()
+    a = 10.0
+    points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, 50, 50)
+    mesh = meshplex.MeshTri(points, cells)
+
+    problem = GinzburgLandau(mesh)
     n = problem.mesh.control_volumes.shape[0]
     u0 = numpy.ones(n, dtype=complex)
     b0 = 0.0
@@ -341,9 +326,9 @@ def test_ginzburg_landau():
         u0,
         b0,
         callback,
-        max_steps=1000,
+        max_steps=10,
         stepsize0=1.0e-2,
-        stepsize_max=5.0e0,
+        stepsize_max=1.0,
         newton_tol=1.0e-10,
     )
     return

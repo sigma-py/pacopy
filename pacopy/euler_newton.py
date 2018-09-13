@@ -35,7 +35,7 @@ def euler_newton(
     u0,
     lmbda0,
     callback,
-    max_steps=100,
+    max_steps=float("inf"),
     verbose=True,
     newton_tol=1.0e-12,
     newton_max_steps=5,
@@ -209,6 +209,9 @@ def euler_newton(
         dlmbda_ds_current = dlmbda_ds
 
         if adaptive_theta:
+            # See LOCA manual, equation (2.23). There are min and max safeguards that
+            # prevent numerical instabilities when solving the nonlinear systems. Needs
+            # more investigation.
             dlmbda_ds2_target = 0.5
             theta *= (
                 abs(dlmbda_ds)
