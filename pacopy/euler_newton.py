@@ -37,7 +37,7 @@ def euler_newton(
     callback,
     max_steps=100,
     verbose=True,
-    newton_tol=1.0e-14,
+    newton_tol=1.0e-12,
     newton_max_steps=5,
     predictor="tangent",
     corrector_variant="tangent",
@@ -45,7 +45,7 @@ def euler_newton(
     stepsize0=5.0e-1,
     stepsize_max=5.0e-1,
     stepsize_aggressiveness=2,
-    smoothness_factor=3.0,
+    smoothness_factor=1.0,
     dlmbda_ds_target2=0.5,  # square of the target for dlmbda_ds
 ):
     """Pseudo-arclength continuation, implemented in the style of LOCA
@@ -72,6 +72,9 @@ def euler_newton(
 
     ds = stepsize0
 
+    # TODO play around with this
+    theta_max = 1.0e8
+
     # tangent predictor for the first step
     du_dlmbda = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
     # One could optionally use a negative sign here
@@ -79,12 +82,16 @@ def euler_newton(
     du_ds = du_dlmbda * dlmbda_ds
 
     duds2 = problem.inner(du_ds, du_ds)
+
     theta = math.sqrt(
         (dlmbda_ds ** 2 / dlmbda_ds_target2) * (1 - dlmbda_ds_target2) / duds2
     )
+    theta = min(theta, theta_max)
+    theta = 1.0  # TODO remove
     nrm = math.sqrt(theta ** 2 * duds2 + dlmbda_ds ** 2)
     du_ds /= nrm
     dlmbda_ds /= nrm
+    duds2 /= nrm ** 2
 
     u_current = u
     lmbda_current = lmbda
@@ -92,7 +99,15 @@ def euler_newton(
     dlmbda_ds_current = dlmbda_ds
     duds2_current = duds2
 
-    callback(k, lmbda, u, lmbda, u, du_dlmbda)
+    # print(problem.inner(du_ds, du_ds) + dlmbda_ds_current ** 2)
+    # print(duds2 + dlmbda_ds_current ** 2)
+    # print(theta ** 2 * problem.inner(du_ds, du_ds) + dlmbda_ds_current ** 2)
+    # print(theta ** 2 * duds2 + dlmbda_ds_current ** 2)
+    # print(math.sqrt(duds2))
+    # print(dlmbda_ds)
+    # exit(1)
+
+    callback(k, lmbda, u)
     k += 1
 
     while True:
@@ -103,13 +118,22 @@ def euler_newton(
             print()
             print("Step {}, stepsize: {:.3e}".format(k, ds))
 
+        print("theta", theta)
+
         # Predictor
         u = u_current + du_ds_current * ds
         lmbda = lmbda_current + dlmbda_ds_current * ds
 
-        # for debugging
-        u_predictor = u.copy()
-        lmbda_predictor = lmbda
+        print("dlmbda_ds", dlmbda_ds_current)
+        print("lmbda_predictor", lmbda)
+
+        # # for debugging
+        # u_predictor = u.copy()
+        # lmbda_predictor = lmbda
+
+        # print("predictor:")
+        # print(math.sqrt(problem.inner(u, u)))
+        # print(lmbda)
 
         # Newton corrector
         u, lmbda, num_newton_steps, newton_success = _newton_corrector(
@@ -152,7 +176,7 @@ def euler_newton(
             du_dlmbda = du_ds / dlmbda_ds
 
         # At this point, du_ds and dlmbda_ds are still unscaled so they do NOT
-        # correspond to du/ds and dlmbda/ds yet.
+        # correspond to the true du/ds and dlmbda/ds yet.
 
         # To make a plotted parameter-solution norm curve look smooth, subsequent
         # predictors should have a small angle between them. The correct way to do this
@@ -184,12 +208,12 @@ def euler_newton(
         #
         # When removing the "+1"s, this is the expression that is used in LOCA (equation
         # (2.25) in the LOCA book).
-        print("cos(alpha)", cos_alpha)
-        if cos_alpha < 0.9:
-            print(
-                "Angle between subsequent predictors too large. "
+        cos_alpha_min = 0.0
+        if cos_alpha < cos_alpha_min:
+            print((
+                "Angle between subsequent predictors too large (cos(alpha) = {} < {}). "
                 "Restart with smaller step size."
-            )
+            ).format(cos_alpha, cos_alpha_min))
             ds *= 0.5
             continue
 
@@ -198,6 +222,8 @@ def euler_newton(
         theta = math.sqrt(
             (dlmbda_ds ** 2 / dlmbda_ds_target2) * (1 - dlmbda_ds_target2) / duds2
         )
+        theta = min(theta, theta_max)
+        theta = 1.0  # TODO remove
         nrm = math.sqrt(theta ** 2 * duds2 + dlmbda_ds ** 2)
         du_ds /= nrm
         dlmbda_ds /= nrm
@@ -209,19 +235,18 @@ def euler_newton(
         duds2_current = problem.inner(du_ds, du_ds)
         dlmbda_ds_current = dlmbda_ds
 
-        callback(k, lmbda, u, lmbda_predictor, u_predictor, du_dlmbda)
+        callback(k, lmbda, u)
         k += 1
 
         # Stepsize update
-        ds *= cos_alpha ** smoothness_factor
+        # assert cos_alpha > 0.0
+        # ds *= cos_alpha ** smoothness_factor
         ds *= (
             1
             + stepsize_aggressiveness
             * ((newton_max_steps - num_newton_steps) / (newton_max_steps - 1)) ** 2
         )
         ds = min(stepsize_max, ds)
-
-        input("Press Enter to continue...")
 
     return None
 
@@ -243,7 +268,18 @@ def _newton_corrector(
     # Newton corrector
     num_newton_steps = 0
     newton_success = False
+
+    # lmbda = ds
+
     while True:
+        # print("theta", theta)
+        # print("||du/ds||", math.sqrt(problem.inner(du_ds, du_ds)))
+        # print("||dlmbda/ds||", dlmbda_ds)
+        # print("ds", ds)
+        # print("lmbda_current", lmbda_current)
+        # print("lmbda", lmbda)
+        # print("df/dlmbda", problem.norm2_r(problem.df_dlmbda(u, lmbda)))
+
         r = problem.f(u, lmbda)
         if corrector_variant == "tangent":
             q = (
@@ -272,6 +308,11 @@ def _newton_corrector(
         if num_newton_steps >= newton_max_steps:
             break
 
+        # Solve
+        #
+        #  (J,     dF/dlmbda) (du    )  =  -(F)
+        #  (du/ds, dlmbda/ds) (dlmbda)      (q)
+        #
         z1 = problem.jacobian_solver(u, lmbda, -r)
         z2 = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
 
@@ -279,14 +320,22 @@ def _newton_corrector(
             dlmbda = -(q + theta ** 2 * problem.inner(du_ds, z1)) / (
                 dlmbda_ds + theta ** 2 * problem.inner(du_ds, z2)
             )
+            du = z1 + dlmbda * z2
+
+            # f0 = problem.jacobian(u, lmbda) * du + problem.df_dlmbda(u, lmbda) * dlmbda + r
+            # f1 = theta ** 2 * problem.inner(du_ds, du) + dlmbda_ds * dlmbda + q
+            # print("residuals", math.sqrt(problem.norm2_r(f0)), f1)
         else:
             assert corrector_variant == "secant"
             dlmbda = -(q + 2 * theta ** 2 * problem.inner(u - u_current, z1)) / (
                 2 * (lmbda - lmbda_current)
                 + 2 * theta ** 2 * problem.inner(u - u_current, z2)
             )
+            du = z1 + dlmbda * z2
 
-        du = z1 + dlmbda * z2
+            f0 = problem.jacobian(u, lmbda) * du + problem.df_dlmbda(u, lmbda) * dlmbda + r
+            f1 = 2 * theta ** 2 * problem.inner(u - u_current, du) + 2 * (lmbda - lmbda_current) * dlmbda + q
+            # print("residuals", math.sqrt(problem.norm2_r(f0)), f1)
 
         u += du
         lmbda += dlmbda

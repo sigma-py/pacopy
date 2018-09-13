@@ -140,7 +140,8 @@ def test_brusselator2d():
     values_list = []
     line1, = ax.plot(b_list, values_list, "-", color="#1f77f4")
 
-    def callback(k, b, sol):
+    # def callback(k, b, sol):
+    def callback(k, b, sol, x, y, z):
         b_list.append(b)
         line1.set_xdata(b_list)
         values_list.append(numpy.max(numpy.abs(sol)))

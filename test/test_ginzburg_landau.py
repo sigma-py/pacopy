@@ -86,7 +86,7 @@ class EnergyPrime(object):
 
 class GinzburgLandau(object):
     def __init__(self):
-        points, cells = meshzoo.rectangle(-5.0, 5.0, -5.0, 5.0, 50, 50)
+        points, cells = meshzoo.rectangle(-5.0, 5.0, -5.0, 5.0, 30, 30)
         self.mesh = meshplex.MeshTri(points, cells)
 
         self.V = -1.0
@@ -109,31 +109,21 @@ class GinzburgLandau(object):
         cv = self.mesh.control_volumes
         out = (keo * psi) / cv + psi * (self.V + self.g * numpy.abs(psi) ** 2)
 
-        # The inner product of <f(psi), i*psi> is always 0. We project out that
-        # component numerically to avoid convergence failure for the Jacobian updates
-        # close to a solution. If this is not done, the Krylov method might hang at
-        # something like 10^{-7}.
+        # Algebraically, The inner product of <f(psi), i*psi> is always 0. We project
+        # out that component numerically to avoid convergence failure for the Jacobian
+        # updates close to a solution. If this is not done, the Krylov method might hang
+        # at something like 10^{-7}.
         i_psi = 1j * psi
         out -= self.inner(i_psi, out) / self.inner(i_psi, i_psi) * i_psi
 
         return out
 
     def df_dlmbda(self, psi, mu):
-        eps = 1.0e-5
-        # works:
-        # out = (self.f(psi, mu + eps) - self.f(psi, mu - eps)) / (2 * eps)
-
-        # works:
-        # keo0 = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu + eps)])
-        # keo1 = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu - eps)])
-        # out = (keo0 * psi - keo1 * psi) / (2 * eps) / self.mesh.control_volumes
-
-        # fail:
         keo_prime = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[EnergyPrime(mu)])
         out = (keo_prime * psi) / self.mesh.control_volumes
-        # # same as in f()
-        # i_psi = 1j * psi
-        # out -= self.inner(i_psi, out) / self.inner(i_psi, i_psi) * i_psi
+        # same as in f()
+        i_psi = 1j * psi
+        out -= self.inner(i_psi, out) / self.inner(i_psi, i_psi) * i_psi
         return out
 
     def jacobian(self, psi, mu):
@@ -202,15 +192,15 @@ class GinzburgLandau(object):
             b=rhs,
             M=prec(psi),
             inner_product=self.inner,
-            maxiter=1000,
-            tol=1.0e-14,
+            maxiter=100,
+            tol=1.0e-12,
             # Minv=prec_inv(psi),
             # U=1j * psi,
         )
-        print("Krylov iterations:", out.iter)
-        print("Krylov residual:", out.resnorms[-1])
-        res = jac * out.xk - rhs
-        print("Krylov residual:", numpy.sqrt(self.norm2_r(res)))
+        # print("Krylov iterations:", out.iter)
+        # print("Krylov residual:", out.resnorms[-1])
+        # res = jac * out.xk - rhs
+        # print("Krylov residual (explicit):", numpy.sqrt(self.norm2_r(res)))
 
         # self.ax1.semilogy(out.resnorms)
         # self.ax1.grid()
@@ -236,7 +226,7 @@ class GinzburgLandau(object):
         # out.xk -= self.inner(i_psi, out.xk) / self.inner(i_psi, i_psi) * i_psi
         # print("solution component i*psi", self.inner(i_psi, out.xk) / numpy.sqrt(self.inner(i_psi, i_psi)))
 
-        input("Press")
+        # input("Press")
         # exit(1)
         return out.xk
 
@@ -306,17 +296,18 @@ def test_ginzburg_landau():
     ax = fig.add_subplot(111)
     plt.axis("square")
     plt.xlabel("$\\mu$")
-    plt.ylabel("$||\\psi||_2$")
+    plt.ylabel("$||\\psi||_2^2 / |\Omega|$")
     plt.grid()
     b_list = []
     values_list = []
     line1, = ax.plot(b_list, values_list, "-", color="#1f77f4")
 
-    # def callback(k, b, sol):
-    def callback(k, b, sol, a_, b_, c_):
+    area = numpy.sum(problem.mesh.control_volumes)
+
+    def callback(k, b, sol):
         b_list.append(b)
         line1.set_xdata(b_list)
-        values_list.append(numpy.sqrt(problem.inner(sol, sol)))
+        values_list.append(problem.inner(sol, sol) / area)
         line1.set_ydata(values_list)
         ax.set_xlim(0.0, 1.0)
         ax.set_ylim(0.0, 1.0)
@@ -330,6 +321,7 @@ def test_ginzburg_landau():
             {"triangle": problem.mesh.cells["nodes"]},
             point_data={"psi": numpy.array([numpy.real(sol), numpy.imag(sol)]).T},
         )
+        # input("Press")
         return
 
     # pacopy.natural(
@@ -343,7 +335,8 @@ def test_ginzburg_landau():
     #     newton_tol=1.0e-10,
     # )
     pacopy.euler_newton(
-        problem, u0, b0, callback, max_steps=10, stepsize0=1.0e-2, newton_tol=1.0e-10
+        problem, u0, b0, callback, max_steps=1000, stepsize0=1.0e-2,
+        stepsize_max=5.0e-1, newton_tol=1.0e-10
     )
     return
 
@@ -351,5 +344,5 @@ def test_ginzburg_landau():
 if __name__ == "__main__":
     # test_self_adjointness()
     # test_f_i_psi()
-    # test_ginzburg_landau()
-    test_df_dlmbda()
+    test_ginzburg_landau()
+    # test_df_dlmbda()
