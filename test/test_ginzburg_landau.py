@@ -71,7 +71,9 @@ class EnergyPrime(object):
         beta = numpy.einsum("...k,...k->...", magnetic_potential, edge)
 
         # project the magnetic potential on the edge at the midpoint
-        dmagnetic_potential_dmu = 0.5 * numpy.cross(self.dmagnetic_field_dmu, edge_midpoint)
+        dmagnetic_potential_dmu = 0.5 * numpy.cross(
+            self.dmagnetic_field_dmu, edge_midpoint
+        )
         # <m, edge>
         dbeta_dmu = numpy.einsum("...k,...k->...", dmagnetic_potential_dmu, edge)
 
@@ -335,8 +337,14 @@ def test_ginzburg_landau():
     #     newton_tol=1.0e-10,
     # )
     pacopy.euler_newton(
-        problem, u0, b0, callback, max_steps=1000, stepsize0=1.0e-2,
-        stepsize_max=5.0e0, newton_tol=1.0e-10
+        problem,
+        u0,
+        b0,
+        callback,
+        max_steps=1000,
+        stepsize0=1.0e-2,
+        stepsize_max=5.0e0,
+        newton_tol=1.0e-10,
     )
     return
 
