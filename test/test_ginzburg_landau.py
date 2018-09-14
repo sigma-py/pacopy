@@ -108,7 +108,7 @@ class GinzburgLandau(object):
     def f(self, psi, mu):
         keo = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
         cv = self.mesh.control_volumes
-        out = (keo * psi) / cv + psi * (self.V + self.g * numpy.abs(psi) ** 2)
+        out = (keo * psi) / cv + (self.V + self.g * numpy.abs(psi) ** 2) * psi
 
         # Algebraically, The inner product of <f(psi), i*psi> is always 0. We project
         # out that component numerically to avoid convergence failure for the Jacobian

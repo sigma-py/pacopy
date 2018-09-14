@@ -35,9 +35,16 @@ def set_dirichlet_rows(matrix, idx):
 
 class Brusselator2d(object):
     def __init__(self):
-        points, cells = meshzoo.rectangle(0.0, 1.0, 0.0, 1.0, 20, 20)
+        a = 20.0
+        points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, 40, 40)
         self.mesh = meshplex.MeshTri(points, cells)
-        self.A, _ = pyfvm.discretize_linear(Poisson(), self.mesh)
+        self.A, _ = pyfvm.get_fvm_matrix(self.mesh, [Poisson()])
+
+        k = 1
+        ka = 4.5
+        DD = 8
+        nu = numpy.sqrt(1 / DD)
+        kbcrit = numpy.sqrt(1 + ka * nu)
 
         self.a = 4.0
         self.d1 = 1.0
@@ -49,9 +56,8 @@ class Brusselator2d(object):
         """
         ux, vx = x
         uy, vy = y
-        return numpy.dot(ux, self.mesh.control_volumes * uy) + numpy.dot(
-            vx, self.mesh.control_volumes * vy
-        )
+        cv = self.mesh.control_volumes
+        return numpy.dot(ux, cv * uy) + numpy.dot(vx, cv * vy)
 
     def norm2_r(self, q):
         """Squared norm in the range space (residuals and such).
@@ -140,8 +146,7 @@ def test_brusselator2d():
     values_list = []
     line1, = ax.plot(b_list, values_list, "-", color="#1f77f4")
 
-    # def callback(k, b, sol):
-    def callback(k, b, sol, x, y, z):
+    def callback(k, b, sol):
         b_list.append(b)
         line1.set_xdata(b_list)
         values_list.append(numpy.max(numpy.abs(sol)))
@@ -160,8 +165,8 @@ def test_brusselator2d():
         )
         return
 
-    # pacopy.natural(problem, u0, b0, callback, max_steps=100)
-    pacopy.euler_newton(problem, u0, b0, callback, max_steps=300)
+    pacopy.natural(problem, u0, b0, callback, max_steps=100)
+    # pacopy.euler_newton(problem, u0, b0, callback, max_steps=100)
     return
 
 

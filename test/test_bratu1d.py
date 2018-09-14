@@ -120,8 +120,6 @@ def test_bratu():
 
         fig.canvas.draw()
         fig.canvas.flush_events()
-
-        input("Press")
         return
 
     # pacopy.natural(problem, u0, lmbda0, callback, max_steps=100)

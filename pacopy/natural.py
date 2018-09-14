@@ -11,7 +11,7 @@ def natural(
     lambda_stepsize0=1.0e-1,
     lambda_stepsize_max=1.0e0,
     lambda_stepsize_aggressiveness=2,
-    newton_max_steps=5,
+    max_newton_steps=5,
     newton_tol=1.0e-12,
     max_steps=float("inf"),
     verbose=True,
@@ -29,7 +29,7 @@ def natural(
             problem.norm2_r,
             u0,
             tol=newton_tol,
-            max_iter=newton_max_steps,
+            max_iter=max_newton_steps,
         )
     except NewtonConvergenceError as e:
         print("No convergence for initial step.".format(lmbda))
@@ -67,7 +67,7 @@ def natural(
                 problem.norm2_r,
                 u0,
                 tol=newton_tol,
-                max_iter=newton_max_steps,
+                max_iter=max_newton_steps,
             )
         except NewtonConvergenceError:
             if verbose:
@@ -79,7 +79,7 @@ def natural(
         lambda_stepsize *= (
             1
             + lambda_stepsize_aggressiveness
-            * ((newton_max_steps - newton_steps) / (newton_max_steps - 1)) ** 2
+            * ((max_newton_steps - newton_steps) / (max_newton_steps - 1)) ** 2
         )
         lambda_stepsize = min(lambda_stepsize, lambda_stepsize_max)
 

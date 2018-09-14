@@ -38,7 +38,7 @@ def euler_newton(
     max_steps=float("inf"),
     verbose=True,
     newton_tol=1.0e-12,
-    newton_max_steps=5,
+    max_newton_steps=5,
     predictor="tangent",
     corrector_variant="tangent",
     #
@@ -65,7 +65,7 @@ def euler_newton(
             problem.norm2_r,
             u0,
             tol=newton_tol,
-            max_iter=newton_max_steps,
+            max_iter=max_newton_steps,
         )
     except NewtonConvergenceError as e:
         print("No convergence for initial step.".format(lmbda))
@@ -126,7 +126,7 @@ def euler_newton(
             dlmbda_ds_current,
             ds,
             corrector_variant,
-            newton_max_steps,
+            max_newton_steps,
             newton_tol,
         )
 
@@ -228,7 +228,7 @@ def euler_newton(
         ds *= (
             1
             + stepsize_aggressiveness
-            * ((newton_max_steps - num_newton_steps) / (newton_max_steps - 1)) ** 2
+            * ((max_newton_steps - num_newton_steps) / (max_newton_steps - 1)) ** 2
         )
         ds = min(stepsize_max, ds)
 
@@ -246,7 +246,7 @@ def _newton_corrector(
     dlmbda_ds,
     ds,
     corrector_variant,
-    newton_max_steps,
+    max_newton_steps,
     newton_tol,
 ):
     # Newton corrector
@@ -279,7 +279,7 @@ def _newton_corrector(
             newton_success = True
             break
 
-        if num_newton_steps >= newton_max_steps:
+        if num_newton_steps >= max_newton_steps:
             break
 
         # Solve
