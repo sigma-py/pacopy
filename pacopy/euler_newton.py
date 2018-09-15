@@ -71,14 +71,13 @@ def euler_newton(
         print("No convergence for initial step.".format(lmbda))
         raise e
 
-    ds = stepsize0
+    ds = abs(stepsize0)
 
     theta = theta0
 
     # tangent predictor for the first step
     du_dlmbda = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
-    # One could optionally use a negative sign here
-    dlmbda_ds = 1.0
+    dlmbda_ds = 1.0 if stepsize0 > 0 else -1.0
     du_ds = du_dlmbda * dlmbda_ds
 
     duds2 = problem.inner(du_ds, du_ds)
@@ -276,6 +275,7 @@ def _newton_corrector(
         )
         if problem.norm2_r(r) + q ** 2 < newton_tol ** 2:
             print("Newton corrector converged after {} steps.".format(num_newton_steps))
+            print("lmbda = {}, <u, u> = {}".format(lmbda, problem.inner(u, u)))
             newton_success = True
             break
 

@@ -120,8 +120,17 @@ class GrossPitaevskii(object):
 def test_gross_pitaevskii():
     problem = GrossPitaevskii()
     n = problem.mesh.control_volumes.shape[0]
-    u0 = numpy.ones(n, dtype=complex)
-    mu0 = 2 * problem.omega
+    u0 = numpy.zeros(n, dtype=complex)
+    x, y, z = problem.mesh.node_coords.T
+    # In the N->0 limit, we can decompose the modes in Cartesian form [7] as being
+    # proportional to
+    #
+    #    psi_{m, n} ~ H_m(sqrt(omega)x) H_n(sqrt(omega)y) exp(-omega r**2 / 2)
+    #
+    # where H_m are Hermite polynomials. These linear eigenfunctions have corresponding
+    # eigenvalues mu = (m + n + 1) omega.
+    u0 = numpy.exp(-problem.omega * (x ** 2 + y ** 2) / 2).astype(complex)
+    mu0 = problem.omega
 
     plt.ion()
     fig = plt.figure()
