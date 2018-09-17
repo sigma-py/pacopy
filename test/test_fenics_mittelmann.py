@@ -3,76 +3,78 @@
 import math
 
 import matplotlib.pyplot as plt
-from dolfin import (
-    RectangleMesh,
-    FunctionSpace,
-    dx,
-    assemble,
-    dot,
-    grad,
-    TrialFunction,
-    TestFunction,
-    exp,
-    Function,
-    solve,
-    Point,
-)
 
 import pacopy
 
-
-class Mittelmann(object):
-    def __init__(self):
-        mesh = RectangleMesh(Point(-0.5, -0.5), Point(+0.5, +0.5), 20, 20)
-
-        self.V = FunctionSpace(mesh, "Lagrange", 1)
-
-        u = TrialFunction(self.V)
-        v = TestFunction(self.V)
-        self.a = assemble(dot(grad(u), grad(v)) * dx)
-        self.m = assemble(u * v * dx)
-        return
-
-    def inner(self, a, b):
-        return a.inner(self.m * b)
-
-    def norm2_r(self, a):
-        return a.inner(a)
-
-    def f(self, u, lmbda):
-        v = TestFunction(self.V)
-        ufun = Function(self.V)
-        ufun.vector()[:] = u
-        out = (
-            self.a * u
-            - 10 * assemble(ufun * v * dx)
-            + 10 * lmbda * assemble(exp(ufun) * v * dx)
-        )
-        return out
-
-    def df_dlmbda(self, u, lmbda):
-        v = TestFunction(self.V)
-        ufun = Function(self.V)
-        ufun.vector()[:] = u
-        out = 10 * assemble(exp(ufun) * v * dx)
-        return out
-
-    def jacobian_solver(self, u, lmbda, rhs):
-        t = TrialFunction(self.V)
-        v = TestFunction(self.V)
-        ufun = Function(self.V)
-        ufun.vector()[:] = u
-        a = (
-            self.a
-            - 10 * assemble(t * v * dx)
-            + 10 * lmbda * assemble(exp(ufun) * t * v * dx)
-        )
-        x = Function(self.V)
-        solve(a, x.vector(), rhs)
-        return x.vector()
+dolfin = pytest.importorskip("dolfin")
 
 
 def test_bratu_fenics():
+    from dolfin import (
+        RectangleMesh,
+        FunctionSpace,
+        dx,
+        assemble,
+        dot,
+        grad,
+        TrialFunction,
+        TestFunction,
+        exp,
+        Function,
+        solve,
+        Point,
+    )
+
+    class Mittelmann(object):
+        def __init__(self):
+            mesh = RectangleMesh(Point(-0.5, -0.5), Point(+0.5, +0.5), 20, 20)
+
+            self.V = FunctionSpace(mesh, "Lagrange", 1)
+
+            u = TrialFunction(self.V)
+            v = TestFunction(self.V)
+            self.a = assemble(dot(grad(u), grad(v)) * dx)
+            self.m = assemble(u * v * dx)
+            return
+
+        def inner(self, a, b):
+            return a.inner(self.m * b)
+
+        def norm2_r(self, a):
+            return a.inner(a)
+
+        def f(self, u, lmbda):
+            v = TestFunction(self.V)
+            ufun = Function(self.V)
+            ufun.vector()[:] = u
+            out = (
+                self.a * u
+                - 10 * assemble(ufun * v * dx)
+                + 10 * lmbda * assemble(exp(ufun) * v * dx)
+            )
+            return out
+
+        def df_dlmbda(self, u, lmbda):
+            v = TestFunction(self.V)
+            ufun = Function(self.V)
+            ufun.vector()[:] = u
+            out = 10 * assemble(exp(ufun) * v * dx)
+            return out
+
+        def jacobian_solver(self, u, lmbda, rhs):
+            t = TrialFunction(self.V)
+            v = TestFunction(self.V)
+            ufun = Function(self.V)
+            ufun.vector()[:] = u
+            a = (
+                self.a
+                - 10 * assemble(t * v * dx)
+                + 10 * lmbda * assemble(exp(ufun) * t * v * dx)
+            )
+            x = Function(self.V)
+            solve(a, x.vector(), rhs)
+            return x.vector()
+
     problem = Mittelmann()
     u0 = Function(problem.V).vector()
     lmbda0 = 0.0
