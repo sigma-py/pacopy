@@ -141,7 +141,7 @@ def test_brusselator2d():
     ax = fig.add_subplot(111)
     plt.axis("square")
     plt.xlabel("b")
-    plt.ylabel("$||u||_\infty$")
+    plt.ylabel("$||u||_\\infty$")
     b_list = []
     values_list = []
     line1, = ax.plot(b_list, values_list, "-", color="#1f77f4")

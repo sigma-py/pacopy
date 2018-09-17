@@ -58,27 +58,7 @@ class Bratu1d(object):
         return scipy.sparse.linalg.spsolve(self.jacobian(u, lmbda), rhs)
 
 
-def test_self_adjointness():
-    problem = Bratu1d()
-    n = problem.n
-    numpy.random.seed(0)
-
-    for _ in range(100):
-        lmbda = numpy.random.rand(1)
-        u = numpy.random.rand(n)
-        jac = problem.jacobian(u, lmbda)
-        v0 = numpy.random.rand(n)
-        v1 = numpy.random.rand(n)
-        a0 = problem.inner(v0, jac * v1)
-        a1 = problem.inner(jac * v0, v1)
-        print(a0 - a1)
-        exit(1)
-        assert abs(a0 - a1) < 1.0e-12
-
-    return
-
-
-def test_bratu():
+def test_bratu(max_steps=10, update_plot=False):
     problem = Bratu1d()
     u0 = numpy.zeros(problem.n)
     lmbda0 = 0.0
@@ -93,9 +73,7 @@ def test_bratu():
     # ax2 = fig.add_subplot(122)
     # ax2.grid()
 
-    lmbda_list = []
-    values_list = []
-    line1, = ax1.plot(lmbda_list, values_list, "-x", color="#1f77f4")
+    line1, = ax1.plot([], [], "-x", color="#1f77f4")
 
     # line2, = ax2.plot([], [], "-", color="#1f77f4")
     # line2.set_xdata(numpy.linspace(0.0, 1.0, problem.n))
@@ -103,36 +81,36 @@ def test_bratu():
     # line3.set_xdata(numpy.linspace(0.0, 1.0, problem.n))
 
     def callback(k, lmbda, sol):
-        lmbda_list.append(lmbda)
-        line1.set_xdata(lmbda_list)
-        # values_list.append(numpy.max(numpy.abs(sol)))
-        values_list.append(numpy.sqrt(problem.inner(sol, sol)))
-        line1.set_ydata(values_list)
-        ax1.set_xlim(0.0, 4.0)
-        ax1.set_ylim(0.0, 6.0)
+        if update_plot:
+            line1.set_xdata(numpy.append(line1.get_xdata(), lmbda))
+            # val = numpy.max(numpy.abs(sol))
+            val = numpy.sqrt(problem.inner(sol, sol))
+            line1.set_ydata(numpy.append(line1.get_ydata(), val))
 
-        # ax1.plot([lmbda_pre], [numpy.sqrt(problem.inner(u_pre, u_pre))], ".r")
+            ax1.set_xlim(0.0, 4.0)
+            ax1.set_ylim(0.0, 6.0)
 
-        # line2.set_ydata(sol)
-        # line3.set_ydata(du_dlmbda)
-        # ax2.set_xlim(0.0, 1.0)
-        # ax2.set_ylim(0.0, 6.0)
+            # ax1.plot([lmbda_pre], [numpy.sqrt(problem.inner(u_pre, u_pre))], ".r")
 
-        fig.canvas.draw()
-        fig.canvas.flush_events()
-        # plt.savefig('bratu1d.png'.format(k), transparent=True, bbox_inches="tight")
+            # line2.set_ydata(sol)
+            # line3.set_ydata(du_dlmbda)
+            # ax2.set_xlim(0.0, 1.0)
+            # ax2.set_ylim(0.0, 6.0)
+            fig.canvas.draw()
+            fig.canvas.flush_events()
+            # plt.savefig('bratu1d.png'.format(k), transparent=True, bbox_inches="tight")
         return
 
-    # pacopy.natural(problem, u0, lmbda0, callback, max_steps=100)
+    # pacopy.natural(problem, u0, lmbda0, callback, max_steps=max_steps)
 
     # The condition number of the Jacobian is about 10^4, so we can only expect Newton
     # to converge up to about this factor above machine precision.
     pacopy.euler_newton(
-        problem, u0, lmbda0, callback, max_steps=500, newton_tol=1.0e-10
+        problem, u0, lmbda0, callback, max_steps=max_steps, newton_tol=1.0e-10
     )
     return
 
 
 if __name__ == "__main__":
-    test_bratu()
+    test_bratu(500, update_plot=True)
     # test_self_adjointness()
