@@ -378,7 +378,7 @@ def plot_data():
         plt.clim(0.0, 1.0)
 
         plt.tight_layout()
-        plt.savefig('fig{:03d}.png'.format(k))
+        plt.savefig("fig{:03d}.png".format(k))
         # plt.show()
         plt.close()
 

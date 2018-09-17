@@ -94,7 +94,9 @@ def test_jacobian():
     for _ in range(100):
         u = numpy.random.rand(n)
         v = numpy.random.rand(n)
-        out0 = (problem.f(u + eps * v, delta) - problem.f(u - eps * v, delta)) / (2 * eps)
+        out0 = (problem.f(u + eps * v, delta) - problem.f(u - eps * v, delta)) / (
+            2 * eps
+        )
         out1 = problem.jacobian(u, delta) * v
         assert numpy.all(numpy.abs(out0 - out1) < 1.0e-10)
     return
