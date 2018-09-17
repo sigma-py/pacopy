@@ -6,7 +6,15 @@
 [![PyPi Version](https://img.shields.io/pypi/v/pacopy.svg)](https://pypi.org/project/pacopy)
 [![GitHub stars](https://img.shields.io/github/stars/nschloe/pacopy.svg?logo=github&label=Stars&logoColor=white)](https://github.com/nschloe/pacopy)
 
-[Numerical continuation](https://en.wikipedia.org/wiki/Numerical_continuation) in Python.
+pacopy provides various algorithms of [numerical parameter
+continuation](https://en.wikipedia.org/wiki/Numerical_continuation) for PDEs in Python.
+
+pacopy is backend-agnostic, so it doesn't matter if your problem is formulated with
+[SciPy](https://www.scipy.org/), [FEniCS](https://fenicsproject.org/),
+[pyfvm](https://github.com/nschloe/pyfvm), or any other Python package. The only thing
+the user must provide is a class with some simple methods, e.g., a function evaluation
+`f(u, lmbda)`, a Jacobian a solver `jac_solver(u, lmbda, rhs)` etc.
+
 
 ### Examples
 
@@ -35,24 +43,36 @@ class Bratu1d(object):
         return
 
     def inner(self, a, b):
+        """The inner product of the problem. Can be numpy.dot(a, b), but factoring in
+        the mesh width stays true to the PDE.
+        """
         return numpy.dot(a, self.H * b)
 
     def norm2_r(self, a):
+        """The norm in the range space; used to determine if a solution has been found.
+        """
         return numpy.dot(a, a)
 
     def f(self, u, lmbda):
+        """The evaluation of the function to be solved
+        """
         out = self.A.dot(u) - lmbda * numpy.exp(u)
         out[0] = u[0]
         out[-1] = u[-1]
         return out
 
     def df_dlmbda(self, u, lmbda):
+        """The function's derivative with respect to the parameter. Used in Euler-Newton
+        continuation.
+        """
         out = -numpy.exp(u)
         out[0] = 0.0
         out[-1] = 0.0
         return out
 
     def jacobian_solver(self, u, lmbda, rhs):
+        """A solver for the Jacobian problem.
+        """
         M = self.A.copy()
         d = M.diagonal().copy()
         d -= lmbda * numpy.exp(u)
