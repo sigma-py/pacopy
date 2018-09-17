@@ -276,9 +276,9 @@ def test_df_dlmbda():
     return
 
 
-def test_ginzburg_landau(max_steps=1):
+def test_ginzburg_landau(max_steps=5, n=20):
     a = 10.0
-    points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, 100, 100)
+    points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
     mesh = meshplex.MeshTri(points, cells)
 
     problem = GinzburgLandau(mesh)
@@ -394,5 +394,5 @@ if __name__ == "__main__":
     # test_self_adjointness()
     # test_f_i_psi()
     # test_df_dlmbda()
-    # test_ginzburg_landau(max_steps=100)
+    # test_ginzburg_landau(max_steps=100, n=100)
     plot_data()
