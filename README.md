@@ -12,7 +12,7 @@
 
 #### Bratu
 
-![bratu1d](https://nschloe.github.io/pacopy/bratu1d.png)
+<img src="https://nschloe.github.io/pacopy/bratu1d.png" width="30%">
 
 The classical [Bratu
 problem](https://en.wikipedia.org/wiki/Liouville%E2%80%93Bratu%E2%80%93Gelfand_equation)
