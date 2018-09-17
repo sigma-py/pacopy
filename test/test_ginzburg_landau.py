@@ -276,7 +276,7 @@ def test_df_dlmbda():
     return
 
 
-def test_ginzburg_landau(max_steps=3):
+def test_ginzburg_landau(max_steps=1):
     a = 10.0
     points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, 100, 100)
     mesh = meshplex.MeshTri(points, cells)
