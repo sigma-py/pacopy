@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 #
+import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
 import numpy
 from scipy.sparse.linalg import spsolve
 
@@ -9,6 +11,7 @@ import meshio
 import meshzoo
 import meshplex
 import pyfvm
+import yaml
 
 import pacopy
 
@@ -276,45 +279,29 @@ def test_ginzburg_landau():
     problem = GinzburgLandau(mesh)
     n = problem.mesh.control_volumes.shape[0]
     u0 = numpy.ones(n, dtype=complex)
-    b0 = 0.0
+    mu0 = 0.0
 
-    plt.ion()
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    plt.axis("square")
-    plt.xlabel("$\\mu$")
-    plt.ylabel("$||\\psi||_2^2 / |\Omega|$")
-    plt.grid()
-    b_list = []
-    values_list = []
-    line1, = ax.plot(b_list, values_list, "-", color="#1f77f4")
+    mu_list = []
 
-    area = numpy.sum(problem.mesh.control_volumes)
+    filename = "sol.xdmf"
+    writer = meshio.XdmfTimeSeriesWriter(filename)
+    writer.write_points_cells(
+        problem.mesh.node_coords, {"triangle": problem.mesh.cells["nodes"]}
+    )
 
-    def callback(k, b, sol):
-        b_list.append(b)
-        line1.set_xdata(b_list)
-        values_list.append(problem.inner(sol, sol) / area)
-        line1.set_ydata(values_list)
-        ax.set_xlim(0.0, 1.0)
-        ax.set_ylim(0.0, 1.0)
-        ax.invert_yaxis()
-        fig.canvas.draw()
-        fig.canvas.flush_events()
+    def callback(k, mu, sol):
+        mu_list.append(mu)
         # Store the solution
-        meshio.write_points_cells(
-            "sol{:03d}.vtk".format(k),
-            problem.mesh.node_coords,
-            {"triangle": problem.mesh.cells["nodes"]},
-            point_data={"psi": numpy.array([numpy.real(sol), numpy.imag(sol)]).T},
-        )
-        # input("Press")
+        psi = numpy.array([numpy.real(sol), numpy.imag(sol)]).T
+        writer.write_point_data({"psi": psi}, k)
+        with open("data.yml", "w") as fh:
+            yaml.dump({"filename": filename, "mu": [float(m) for m in mu_list]}, fh)
         return
 
     # pacopy.natural(
     #     problem,
     #     u0,
-    #     b0,
+    #     mu0,
     #     callback,
     #     max_steps=1000,
     #     lambda_stepsize0=1.0e-2,
@@ -324,9 +311,9 @@ def test_ginzburg_landau():
     pacopy.euler_newton(
         problem,
         u0,
-        b0,
+        mu0,
         callback,
-        max_steps=10,
+        max_steps=100,
         stepsize0=1.0e-2,
         stepsize_max=1.0,
         newton_tol=1.0e-10,
@@ -334,8 +321,69 @@ def test_ginzburg_landau():
     return
 
 
+def gibbs_energy(mesh, psi):
+    """Compute the Gibbs free energy. Useful for plotting purposes.
+    """
+    psi2 = psi ** 2
+    alpha = -numpy.real(numpy.dot(psi2.conj(), mesh.control_volumes * psi2))
+    return alpha / numpy.sum(mesh.control_volumes)
+
+
+def plot_data():
+    filename = "data.yml"
+    with open(filename, "r") as fh:
+        data = yaml.safe_load(fh)
+
+    reader = meshio.XdmfTimeSeriesReader(data["filename"])
+    points, cells = reader.read_points_cells()
+    x, y, _ = points.T
+
+    # compute all energies in advance
+    energies = []
+    mesh = meshplex.MeshTri(points, cells["triangle"])
+    for k in range(reader.num_steps):
+        _, point_data, _ = reader.read_data(k)
+        psi = point_data["psi"]
+        psi = psi[:, 0] + 1j * psi[:, 1]
+        energies.append(gibbs_energy(mesh, psi))
+    energies = numpy.array(energies)
+
+    for k in range(reader.num_steps):
+        plt.figure(figsize=(12, 4))
+
+        ax1 = plt.subplot(1, 2, 1)
+        ax1.plot(data["mu"], energies)
+        ax1.set_xlim(0.0, 1.0)
+        ax1.set_ylim(-1.0, 0.0)
+        ax1.grid()
+        line1, = ax1.plot(data["mu"][k], energies[k], "o", color="#1f77f4")
+
+        _, point_data, _ = reader.read_data(k)
+        psi = point_data["psi"]
+        psi = psi[:, 0] + 1j * psi[:, 1]
+        z = numpy.abs(psi)
+
+        ax2 = plt.subplot(1, 2, 2)
+        triang = matplotlib.tri.Triangulation(x, y)
+        plt.tripcolor(triang, z, shading="flat")
+
+        ax2.axis("square")
+        ax2.set_xlim(-5.0, 5.0)
+        ax2.set_ylim(-5.0, 5.0)
+        plt.colorbar()
+        plt.set_cmap("gray")
+        plt.clim(0.0, 1.0)
+
+        plt.tight_layout()
+        plt.savefig('fig{:03d}.png'.format(k))
+        # plt.show()
+
+    return
+
+
 if __name__ == "__main__":
     # test_self_adjointness()
     # test_f_i_psi()
-    test_ginzburg_landau()
     # test_df_dlmbda()
+    # test_ginzburg_landau()
+    plot_data()
