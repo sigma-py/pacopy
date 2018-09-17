@@ -273,7 +273,7 @@ def test_df_dlmbda():
 
 def test_ginzburg_landau():
     a = 10.0
-    points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, 50, 50)
+    points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, 100, 100)
     mesh = meshplex.MeshTri(points, cells)
 
     problem = GinzburgLandau(mesh)
@@ -293,7 +293,7 @@ def test_ginzburg_landau():
         mu_list.append(mu)
         # Store the solution
         psi = numpy.array([numpy.real(sol), numpy.imag(sol)]).T
-        writer.write_point_data({"psi": psi}, k)
+        writer.write_data(k, point_data={"psi": psi})
         with open("data.yml", "w") as fh:
             yaml.dump({"filename": filename, "mu": [float(m) for m in mu_list]}, fh)
         return
@@ -341,22 +341,24 @@ def plot_data():
     # compute all energies in advance
     energies = []
     mesh = meshplex.MeshTri(points, cells["triangle"])
-    for k in range(reader.num_steps):
+    for k in range(len(data["mu"])):
         _, point_data, _ = reader.read_data(k)
         psi = point_data["psi"]
         psi = psi[:, 0] + 1j * psi[:, 1]
         energies.append(gibbs_energy(mesh, psi))
     energies = numpy.array(energies)
 
-    for k in range(reader.num_steps):
-        plt.figure(figsize=(12, 4))
+    for k in range(len(data["mu"])):
+        plt.figure(figsize=(11, 4))
 
         ax1 = plt.subplot(1, 2, 1)
         ax1.plot(data["mu"], energies)
         ax1.set_xlim(0.0, 1.0)
         ax1.set_ylim(-1.0, 0.0)
         ax1.grid()
-        line1, = ax1.plot(data["mu"][k], energies[k], "o", color="#1f77f4")
+        ax1.plot(data["mu"][k], energies[k], "o", color="#1f77f4")
+        ax1.set_xlabel("$\\mu$")
+        ax1.set_ylabel("$\\mathcal{E}(\\psi)$")
 
         _, point_data, _ = reader.read_data(k)
         psi = point_data["psi"]
@@ -370,6 +372,7 @@ def plot_data():
         ax2.axis("square")
         ax2.set_xlim(-5.0, 5.0)
         ax2.set_ylim(-5.0, 5.0)
+        ax2.set_title("$|\\psi|$")
         plt.colorbar()
         plt.set_cmap("gray")
         plt.clim(0.0, 1.0)
@@ -377,6 +380,7 @@ def plot_data():
         plt.tight_layout()
         plt.savefig('fig{:03d}.png'.format(k))
         # plt.show()
+        plt.close()
 
     return
 
