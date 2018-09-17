@@ -28,7 +28,6 @@ def test_bratu_fenics():
     )
 
     class Bratu(object):
-
         def __init__(self):
             self.mesh = UnitSquareMesh(40, 40, "left/right")
 
