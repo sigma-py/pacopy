@@ -2,7 +2,6 @@
 #
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib import gridspec
 import numpy
 from scipy.sparse.linalg import spsolve
 

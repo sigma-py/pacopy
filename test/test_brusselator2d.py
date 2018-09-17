@@ -40,11 +40,11 @@ class Brusselator2d(object):
         self.mesh = meshplex.MeshTri(points, cells)
         self.A, _ = pyfvm.get_fvm_matrix(self.mesh, [Poisson()])
 
-        k = 1
-        ka = 4.5
-        DD = 8
-        nu = numpy.sqrt(1 / DD)
-        kbcrit = numpy.sqrt(1 + ka * nu)
+        # k = 1
+        # ka = 4.5
+        # DD = 8
+        # nu = numpy.sqrt(1 / DD)
+        # kbcrit = numpy.sqrt(1 + ka * nu)
 
         self.a = 4.0
         self.d1 = 1.0
