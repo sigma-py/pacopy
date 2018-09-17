@@ -10,6 +10,96 @@
 
 ### Examples
 
+#### Bratu
+
+![bratu1d](https://nschloe.github.io/pacopy/bratu1d.png)
+
+The classical [Bratu
+problem](https://en.wikipedia.org/wiki/Liouville%E2%80%93Bratu%E2%80%93Gelfand_equation)
+in 1D with Dirichlet boundary conditions. To reproduce the plot, you first have to
+specify the problem; this is the classical finite-difference approximation:
+```python
+class Bratu1d(object):
+    def __init__(self):
+        self.n = 51
+        h = 1.0 / (self.n - 1)
+
+        self.H = numpy.full(self.n, h)
+        self.H[0] = h / 2
+        self.H[-1] = h / 2
+
+        self.A = (
+            scipy.sparse.diags([-1.0, 2.0, -1.0], [-1, 0, 1], shape=(self.n, self.n))
+            / h ** 2
+        )
+        return
+
+    def inner(self, a, b):
+        return numpy.dot(a, self.H * b)
+
+    def norm2_r(self, a):
+        return numpy.dot(a, a)
+
+    def f(self, u, lmbda):
+        out = self.A.dot(u) - lmbda * numpy.exp(u)
+        out[0] = u[0]
+        out[-1] = u[-1]
+        return out
+
+    def df_dlmbda(self, u, lmbda):
+        out = -numpy.exp(u)
+        out[0] = 0.0
+        out[-1] = 0.0
+        return out
+
+    def jacobian_solver(self, u, lmbda, rhs):
+        M = self.A.copy()
+        d = M.diagonal().copy()
+        d -= lmbda * numpy.exp(u)
+        M.setdiag(d)
+        # Dirichlet conditions
+        M.data[0][self.n - 2] = 0.0
+        M.data[1][0] = 1.0
+        M.data[1][self.n - 1] = 1.0
+        M.data[2][1] = 0.0
+        return scipy.sparse.linalg.spsolve(M.tocsr(), rhs)
+```
+Then pass the object to any of pacopy's methods, e.g., the Euler-Newton (arclength)
+continuation:
+```python
+problem = Bratu1d()
+# Initial guess
+u0 = numpy.zeros(problem.n)
+# Initial parameter value
+lmbda0 = 0.0
+
+lmbda_list = []
+values_list = []
+def callback(k, lmbda, sol):
+    # Use the callback for plotting, writing data to files etc.
+    fig = plt.figure()
+    ax1 = fig.add_subplot(111)
+    ax1.set_xlabel("$\\lambda$")
+    ax1.set_ylabel("$||u||_2$")
+    ax1.grid()
+
+    lmbda_list.append(lmbda)
+    values_list.append(numpy.sqrt(problem.inner(sol, sol)))
+
+    ax1.plot(lmbda_list, values_list, "-x", color="#1f77f4")
+    ax1.set_xlim(0.0, 4.0)
+    ax1.set_ylim(0.0, 6.0)
+    return
+
+# Natural parameter continuation
+# pacopy.natural(problem, u0, lmbda0, callback, max_steps=100)
+
+pacopy.euler_newton(
+    problem, u0, lmbda0, callback, max_steps=500, newton_tol=1.0e-10
+)
+```
+
+
 #### Ginzburg–Landau
 
 ![ginzburg-landau](https://nschloe.github.io/pacopy/ginzburg-landau.gif)

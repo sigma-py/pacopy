@@ -120,6 +120,8 @@ def test_bratu():
 
         fig.canvas.draw()
         fig.canvas.flush_events()
+        # plt.tight_layout()
+        # plt.savefig('bratu1d.png'.format(k))
         return
 
     # pacopy.natural(problem, u0, lmbda0, callback, max_steps=100)
