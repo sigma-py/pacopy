@@ -3,79 +3,83 @@
 import math
 
 import matplotlib.pyplot as plt
-from dolfin import (
-    UnitSquareMesh,
-    FunctionSpace,
-    dx,
-    assemble,
-    dot,
-    grad,
-    DirichletBC,
-    TrialFunction,
-    TestFunction,
-    exp,
-    Function,
-    solve,
-    XDMFFile,
-)
+import pytest
 
 import pacopy
 
-
-class Bratu(object):
-    def __init__(self):
-        self.mesh = UnitSquareMesh(40, 40, "left/right")
-
-        self.V = FunctionSpace(self.mesh, "Lagrange", 1)
-
-        self.bc = DirichletBC(self.V, 0.0, "on_boundary")
-
-        u = TrialFunction(self.V)
-        v = TestFunction(self.V)
-        self.a = assemble(dot(grad(u), grad(v)) * dx)
-        self.m = assemble(u * v * dx)
-        return
-
-    def inner(self, a, b):
-        return a.inner(self.m * b)
-
-    def norm2_r(self, a):
-        return a.inner(a)
-
-    def f(self, u, lmbda):
-        v = TestFunction(self.V)
-        ufun = Function(self.V)
-        ufun.vector()[:] = u
-        out = self.a * u - lmbda * assemble(exp(ufun) * v * dx)
-        DirichletBC(self.V, ufun, "on_boundary").apply(out)
-        return out
-
-    def df_dlmbda(self, u, lmbda):
-        v = TestFunction(self.V)
-        ufun = Function(self.V)
-        ufun.vector()[:] = u
-        out = -assemble(exp(ufun) * v * dx)
-        self.bc.apply(out)
-        return out
-
-    def jacobian_solver(self, u, lmbda, rhs):
-        t = TrialFunction(self.V)
-        v = TestFunction(self.V)
-        # from dolfin import Constant
-        # a = assemble(
-        #     dot(grad(t), grad(v)) * dx - Constant(lmbda) * exp(u) * t * v * dx
-        # )
-        ufun = Function(self.V)
-        ufun.vector()[:] = u
-        a = self.a - lmbda * assemble(exp(ufun) * t * v * dx)
-        self.bc.apply(a)
-        x = Function(self.V)
-        # solve(a, x.vector(), rhs, "gmres", "ilu")
-        solve(a, x.vector(), rhs)
-        return x.vector()
+dolfin = pytest.importorskip("dolfin")
 
 
 def test_bratu_fenics():
+    from dolfin import (
+        UnitSquareMesh,
+        FunctionSpace,
+        dx,
+        assemble,
+        dot,
+        grad,
+        DirichletBC,
+        TrialFunction,
+        TestFunction,
+        exp,
+        Function,
+        solve,
+        XDMFFile,
+    )
+
+    class Bratu(object):
+
+        def __init__(self):
+            self.mesh = UnitSquareMesh(40, 40, "left/right")
+
+            self.V = FunctionSpace(self.mesh, "Lagrange", 1)
+
+            self.bc = DirichletBC(self.V, 0.0, "on_boundary")
+
+            u = TrialFunction(self.V)
+            v = TestFunction(self.V)
+            self.a = assemble(dot(grad(u), grad(v)) * dx)
+            self.m = assemble(u * v * dx)
+            return
+
+        def inner(self, a, b):
+            return a.inner(self.m * b)
+
+        def norm2_r(self, a):
+            return a.inner(a)
+
+        def f(self, u, lmbda):
+            v = TestFunction(self.V)
+            ufun = Function(self.V)
+            ufun.vector()[:] = u
+            out = self.a * u - lmbda * assemble(exp(ufun) * v * dx)
+            DirichletBC(self.V, ufun, "on_boundary").apply(out)
+            return out
+
+        def df_dlmbda(self, u, lmbda):
+            v = TestFunction(self.V)
+            ufun = Function(self.V)
+            ufun.vector()[:] = u
+            out = -assemble(exp(ufun) * v * dx)
+            self.bc.apply(out)
+            return out
+
+        def jacobian_solver(self, u, lmbda, rhs):
+            t = TrialFunction(self.V)
+            v = TestFunction(self.V)
+            # from dolfin import Constant
+            # a = assemble(
+            #     dot(grad(t), grad(v)) * dx - Constant(lmbda) * exp(u) * t * v * dx
+            # )
+            ufun = Function(self.V)
+            ufun.vector()[:] = u
+            a = self.a - lmbda * assemble(exp(ufun) * t * v * dx)
+            self.bc.apply(a)
+            x = Function(self.V)
+            # solve(a, x.vector(), rhs, "gmres", "ilu")
+            solve(a, x.vector(), rhs)
+            return x.vector()
+
     problem = Bratu()
     u0 = Function(problem.V).vector()
     lmbda0 = 0.0
