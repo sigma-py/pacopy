@@ -6,3 +6,4 @@ scipy
 meshio
 numpy
 meshplex
+lxml
