@@ -8,6 +8,21 @@
 
 [Numerical continuation](https://en.wikipedia.org/wiki/Numerical_continuation) in Python.
 
+### Examples
+
+#### Ginzburg–Landau
+
+![ginzburg-landau](https://nschloe.github.io/pacopy/ginzburg-landau.gif)
+
+The [Ginzburg-Landau
+equations](https://en.wikipedia.org/wiki/Ginzburg%E2%80%93Landau_theory) model the
+behavior of extreme type-II superconductors under a magnetic field. The above example
+(to be found in full detail
+[here](https://github.com/nschloe/pacopy/blob/master/test/test_ginzburg_landau.py))
+shows parameter continuation in the strength of the magnetic field. The plot on the
+right-hand side shows the absolute value of the complex-valued solution.
+
+
 ### Installation
 
 pacopy is [available from the Python Package
