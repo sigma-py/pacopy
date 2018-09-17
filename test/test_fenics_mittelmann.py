@@ -3,13 +3,14 @@
 import math
 
 import matplotlib.pyplot as plt
+import pytest
 
 import pacopy
 
 dolfin = pytest.importorskip("dolfin")
 
 
-def test_bratu_fenics():
+def test_mittelmann_fenics():
     from dolfin import (
         RectangleMesh,
         FunctionSpace,
@@ -107,4 +108,4 @@ def test_bratu_fenics():
 
 
 if __name__ == "__main__":
-    test_bratu_fenics()
+    test_mittelmann_fenics()
