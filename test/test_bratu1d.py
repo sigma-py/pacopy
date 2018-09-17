@@ -101,7 +101,7 @@ def test_bratu(max_steps=10, update_plot=False):
             # plt.savefig('bratu1d.png'.format(k), transparent=True, bbox_inches="tight")
         return
 
-    # pacopy.natural(problem, u0, lmbda0, callback, max_steps=max_steps)
+    pacopy.natural(problem, u0, lmbda0, callback, max_steps=max_steps)
 
     # The condition number of the Jacobian is about 10^4, so we can only expect Newton
     # to converge up to about this factor above machine precision.
