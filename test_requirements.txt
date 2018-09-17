@@ -1,3 +1,9 @@
 pyfvm
 matplotlib
 pykry
+meshzoo
+scipy
+yaml
+meshio
+numpy
+meshplex
