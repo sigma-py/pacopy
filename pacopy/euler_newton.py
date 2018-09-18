@@ -39,7 +39,7 @@ def euler_newton(
     verbose=True,
     newton_tol=1.0e-12,
     max_newton_steps=5,
-    predictor="tangent",
+    predictor_variant="tangent",
     corrector_variant="tangent",
     #
     stepsize0=5.0e-1,
@@ -49,11 +49,92 @@ def euler_newton(
     theta0=1.0,
     adaptive_theta=False,
 ):
-    """Pseudo-arclength continuation, implemented in the style of LOCA
-    <https://trilinos.org/packages/nox-and-loca/>, i.e., one doesn't solve a bordered
-    system, but the solution is constructed from two solves of the naked Jacobian
+    """Pseudo-arclength continuation.
+
+    This implementation takes some inspiration from `LOCA
+    <http://www.cs.sandia.gov/loca/loca1.1_book.pdf>`_ in that no single bordered system
+    is solved, but the solution is constructed from two solves of the plain Jacobian
     system. This has several advantages, one being that preconditioners for the Jacobian
     can be reused.
+
+    Args:
+        problem: Instance of the problem class
+        u0: Initial guess
+        lambda0: Initial parameter value
+        callback: Callback function
+        max_steps (int): Maximum number of continuation steps
+        verbose (bool): Verbose output
+        newton_tol (float): Newton tolerance
+        max_newton_steps (int): Maxmimum number of Newton steps
+        predictor_variant (string): :code:`"tangent"` or :code:`"secant"`
+        corrector_variant (string): :code:`"tangent"` or :code:`"secant"`
+        stepsize0 (float): Initial step size
+        stepsize_max (float): Maximum step size
+        stepsize_aggressiveness (float): The step size is adapted after each step
+            such that :code:`max_newton_steps` is exhausted approximately. This
+            parameter determines how aggressively the the step size is increased if too
+            few Newton steps were used.
+        cos_alpha_min (float): To make a plotted parameter-solution norm curve look
+            smooth, subsequent predictors should have a small angle between them. The
+            correct way to do this would be to look at
+
+            .. math::
+
+                  \\cos(\\alpha) = v_i^T v_{i+1} / \\|v_i\\| / \\|v_{i+1}\\| \\\\
+                  v_i := (\\|u_i^p\\| - \\|u_i\\|, \\lambda_i^p - \\lambda_i).
+
+            Instead of taking the solution and predictor norms, the entire vectors are
+            taken,
+
+            .. math::
+
+              w_i := (u_i^p - u_i, \\lambda_i^p - \\lambda_i),
+
+            with the appropriate inner product in the product space :math:`U\\times
+            \\mathbb{R}`. This results in the expression
+
+            .. math::
+
+                \\cos(\\alpha) = \\frac{
+                    \\langle \\frac{du_0}{ds}, \\frac{du}{ds}\\rangle +
+                    \\frac{d\\lambda_0}{ds} \\frac{d\\lambda}{ds}}{
+                    \\sqrt{\\|\\frac{du_0}{ds}\\|^2
+                    + \\frac{d\\lambda_0}{ds}^2}
+                    \\sqrt{\\|\\frac{du}{ds}\\|^2 +
+                    \\frac{d\\lambda}{ds}^2}}
+
+            When using the tangent predictor, this can be written as
+
+            .. math::
+
+              \\cos(\\alpha) = \\frac{\\langle \\frac{du}{d\\lambda},
+              \\frac{du_0}{d\\lambda}\\rangle + 1}{\\sqrt{\\|\\frac{du}{d\\lambda}\\|^2 + 1}
+                  \\sqrt{\\|\\frac{du_0}{d\\lambda}\\|^2 + 1}
+              }
+
+            When removing the :math:`+1` s, this is the expression that is used in LOCA
+            (equation (2.25) in the LOCA book).
+
+        theta0 (float): The arc-length equation is
+
+            .. math::
+
+              \\left\\|\\frac{du}{ds}\\right\\|^2 +
+              \\left(\\frac{d\\lambda}{ds}\\right)^2 = 1.
+
+            Quoting from LOCA:
+            It is numerically advantageous for the relative magnitudes of the parameter
+            and solution updates to be of similar order. In particular, the advantage of
+            using arc-length parameterization can be lost if the solution contribution
+            to the arc length equation becomes very small. In this algorithm, a single
+            scaling factor :math:`\\theta` is used for the solution contribution in
+            order to provide some control over the relative contributions of
+            :math:`\\lambda` and :math:`u`. The modified arc length equation is then
+
+            .. math::
+
+              \\left\\|\\frac{du}{ds}\\right\\|^2 +
+              \\theta^2 \\left(\\frac{d\\lambda}{ds}\\right)^2 = 1.
     """
     lmbda = lmbda0
 
@@ -135,7 +216,7 @@ def euler_newton(
             continue
 
         # Approximate dlmbda/ds and du/ds for the next predictor step
-        if predictor == "tangent":
+        if predictor_variant == "tangent":
             # tangent predictor (like in natural continuation)
             #
             du_dlmbda = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
@@ -147,7 +228,7 @@ def euler_newton(
             du_ds = du_dlmbda * dlmbda_ds
         else:
             # secant predictor
-            assert predictor == "secant"
+            assert predictor_variant == "secant"
             du_ds = (u - u_current) / ds
             dlmbda_ds = (lmbda - lmbda_current) / ds
             # du_lmbda not necessary here. TODO remove
