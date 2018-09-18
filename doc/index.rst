@@ -6,10 +6,12 @@
 Welcome to pacopy's documentation!
 ==================================
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+.. automodule:: pacopy
+   :members:
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Contents:
 
 
 Indices and tables
