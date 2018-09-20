@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy
 from scipy.sparse.linalg import spsolve
 
+import cplot
 import pykry
 import meshio
 import meshzoo
@@ -368,19 +369,25 @@ def plot_data():
         _, point_data, _ = reader.read_data(k)
         psi = point_data["psi"]
         psi = psi[:, 0] + 1j * psi[:, 1]
-        z = numpy.abs(psi)
 
         ax2 = plt.subplot(1, 2, 2)
         triang = matplotlib.tri.Triangulation(x, y)
-        plt.tripcolor(triang, z, shading="flat")
+        # The absolute values of the solution psi of the Ginzburg-Landau equations all
+        # sit between 0 and 1, so we don't need a fancy scaling of absolute values for
+        # cplot. This results in the values with |psi|=1 being displayed as white,
+        # however, losing visual information about the complex argument. On the other
+        # hand, plots are rather more bright, resulting in more visually appealing
+        # figures.
+        cplot.tripcolor(triang, psi, abs_scaling=lambda r: r)
+        # plt.tripcolor(triang, numpy.abs(psi))
 
         ax2.axis("square")
         ax2.set_xlim(-5.0, 5.0)
         ax2.set_ylim(-5.0, 5.0)
-        ax2.set_title("$|\\psi|$")
-        plt.colorbar()
-        plt.set_cmap("gray")
-        plt.clim(0.0, 1.0)
+        ax2.set_title("$\\psi$")
+        # plt.colorbar()
+        # plt.set_cmap("gray")
+        # plt.clim(0.0, 1.0)
 
         plt.tight_layout()
         plt.savefig("fig{:03d}.png".format(k))

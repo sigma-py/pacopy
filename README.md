@@ -133,7 +133,8 @@ behavior of extreme type-II superconductors under a magnetic field. The above ex
 (to be found in full detail
 [here](https://github.com/nschloe/pacopy/blob/master/test/test_ginzburg_landau.py))
 shows parameter continuation in the strength of the magnetic field. The plot on the
-right-hand side shows the absolute value of the complex-valued solution.
+right-hand side shows the complex-valued solution using
+[cplot](https://github.com/nschloe/cplot).
 
 
 ### Installation
