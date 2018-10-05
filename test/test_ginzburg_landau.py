@@ -92,12 +92,8 @@ class EnergyPrime(object):
 class GinzburgLandau(object):
     def __init__(self, mesh):
         self.mesh = mesh
-
         self.V = -1.0
         self.g = 1.0
-
-        # import matplotlib.pyplot as plt
-        # self.fig1, self.ax1 = plt.subplots()
         return
 
     def inner(self, x, y):
@@ -130,24 +126,27 @@ class GinzburgLandau(object):
         out -= self.inner(i_psi, out) / self.inner(i_psi, i_psi) * i_psi
         return out
 
-    def jacobian_solver(self, psi, mu, rhs):
+    def jacobian(self, psi, mu):
         keo = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
         cv = self.mesh.control_volumes
 
-        def jacobian(psi):
-            def _apply_jacobian(phi):
-                return (keo * phi) / cv + alpha * phi + beta * phi.conj()
+        def _apply_jacobian(phi):
+            return (keo * phi) / cv + alpha * phi + beta * phi.conj()
 
-            alpha = self.V + self.g * 2.0 * (psi.real ** 2 + psi.imag ** 2)
-            beta = self.g * psi ** 2
+        alpha = self.V + self.g * 2.0 * (psi.real ** 2 + psi.imag ** 2)
+        beta = self.g * psi ** 2
 
-            num_unknowns = len(self.mesh.node_coords)
-            return pykry.LinearOperator(
-                (num_unknowns, num_unknowns),
-                complex,
-                dot=_apply_jacobian,
-                dot_adj=_apply_jacobian,
-            )
+        num_unknowns = len(self.mesh.node_coords)
+        return pykry.LinearOperator(
+            (num_unknowns, num_unknowns),
+            complex,
+            dot=_apply_jacobian,
+            dot_adj=_apply_jacobian,
+        )
+
+    def jacobian_solver(self, psi, mu, rhs):
+        keo = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
+        cv = self.mesh.control_volumes
 
         def prec_inv(psi):
             prec = keo.copy()
@@ -172,7 +171,7 @@ class GinzburgLandau(object):
                 (num_unknowns, num_unknowns), complex, dot=_apply, dot_adj=_apply
             )
 
-        jac = jacobian(psi)
+        jac = self.jacobian(psi, mu)
         out = pykry.gmres(
             A=jac,
             b=rhs,
@@ -212,6 +211,12 @@ class GinzburgLandau(object):
         # out.xk -= self.inner(i_psi, out.xk) / self.inner(i_psi, i_psi) * i_psi
         # print("solution component i*psi", self.inner(i_psi, out.xk) / numpy.sqrt(self.inner(i_psi, i_psi)))
         return out.xk
+
+    def jacobian_eigenvalues(self, psi, mu):
+        print("a")
+        jac = self.jacobian(psi, mu)
+        exit(1)
+        return
 
 
 # def test_self_adjointness():
@@ -324,6 +329,16 @@ def test_ginzburg_landau(max_steps=5, n=20):
         stepsize_max=1.0,
         newton_tol=1.0e-10,
     )
+    # pacopy.branch_switching(
+    #     problem,
+    #     u0,
+    #     mu0,
+    #     callback,
+    #     max_steps=max_steps,
+    #     stepsize0=1.0e-2,
+    #     stepsize_max=1.0,
+    #     newton_tol=1.0e-10,
+    # )
     return
 
 
@@ -401,5 +416,5 @@ if __name__ == "__main__":
     # test_self_adjointness()
     # test_f_i_psi()
     # test_df_dlmbda()
-    # test_ginzburg_landau(max_steps=100, n=100)
-    plot_data()
+    test_ginzburg_landau(max_steps=100, n=100)
+    # plot_data()

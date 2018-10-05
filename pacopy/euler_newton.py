@@ -48,6 +48,7 @@ def euler_newton(
     cos_alpha_min=0.9,
     theta0=1.0,
     adaptive_theta=False,
+    compute_eigenvalues=False,
 ):
     """Pseudo-arclength continuation.
 
@@ -178,6 +179,10 @@ def euler_newton(
     du_ds_current = du_ds
     dlmbda_ds_current = dlmbda_ds
     duds2_current = duds2
+
+    if compute_eigenvalues:
+        eigvals = problem.jacobian_eigenvalues(u, lmbda)
+        exit(1)
 
     callback(k, lmbda, u)
     k += 1
