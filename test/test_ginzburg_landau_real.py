@@ -172,8 +172,8 @@ class GinzburgLandauReal(object):
         # out that component numerically to avoid convergence failure for the Jacobian
         # updates close to a solution. If this is not done, the Krylov method might hang
         # at something like 10^{-7}.
-        # i_psi = to_real(1j * to_complex(psi))
-        # out -= self.inner(i_psi, out) / self.inner(i_psi, i_psi) * i_psi
+        i_psi = to_real(1j * to_complex(psi))
+        out -= self.inner(i_psi, out) / self.inner(i_psi, i_psi) * i_psi
 
         return out
 
@@ -182,9 +182,9 @@ class GinzburgLandauReal(object):
             pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[EnergyPrime(mu)])
         )
         out = keo_prime * psi
-        # # same as in f()
-        # i_psi = to_real(1j * to_complex(psi))
-        # out -= self.inner(i_psi, out) / self.inner(i_psi, i_psi) * i_psi
+        # same as in f()
+        i_psi = to_real(1j * to_complex(psi))
+        out -= self.inner(i_psi, out) / self.inner(i_psi, i_psi) * i_psi
         return out
 
     def jacobian(self, psi, mu):
@@ -212,9 +212,6 @@ class GinzburgLandauReal(object):
         )
 
     def jacobian_solver(self, psi, mu, rhs):
-        keo = split_sparse_matrix(
-            pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
-        )
         abs_psi2 = numpy.zeros(psi.shape[0])
         abs_psi2[0::2] += psi[0::2] ** 2 + psi[1::2] ** 2
         cv = to_real(self.mesh.control_volumes)
@@ -255,7 +252,12 @@ class GinzburgLandauReal(object):
 
 
 def test_self_adjointness():
-    problem = GinzburgLandauReal()
+    a = 10.0
+    n = 10
+    points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
+    mesh = meshplex.MeshTri(points, cells)
+
+    problem = GinzburgLandauReal(mesh)
     n = problem.mesh.control_volumes.shape[0]
     psi = numpy.random.rand(2 * n)
     jac = problem.jacobian(psi, 0.1)
@@ -345,7 +347,7 @@ def test_jacobian():
     return
 
 
-def test_continuation(num_steps=20):
+def test_continuation(num_steps=5):
     a = 10.0
     n = 10
     points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
