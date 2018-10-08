@@ -58,6 +58,7 @@ class EnergyPrime(object):
     def __init__(self, mu):
         super(EnergyPrime, self).__init__()
         self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
+        self.dmagnetic_field_dmu = numpy.array([0.0, 0.0, 1.0])
         self.subdomains = [None]
         return
 
@@ -74,11 +75,18 @@ class EnergyPrime(object):
         # <m, edge>
         beta = numpy.einsum("...k,...k->...", magnetic_potential, edge)
 
+        # project the magnetic potential on the edge at the midpoint
+        dmagnetic_potential_dmu = 0.5 * numpy.cross(
+            self.dmagnetic_field_dmu, edge_midpoint
+        )
+        # <m, edge>
+        dbeta_dmu = numpy.einsum("...k,...k->...", dmagnetic_potential_dmu, edge)
+
         zero = numpy.zeros(edge_ce_ratio.shape, dtype=complex)
         return numpy.array(
             [
-                [zero, 1j * edge_ce_ratio * numpy.exp(-1j * beta)],
-                [-1j * edge_ce_ratio * numpy.exp(1j * beta), zero],
+                [zero, 1j * dbeta_dmu * edge_ce_ratio * numpy.exp(-1j * beta)],
+                [-1j * dbeta_dmu * edge_ce_ratio * numpy.exp(1j * beta), zero],
             ]
         )
 
@@ -133,7 +141,7 @@ def conjugate(a):
 def square(a):
     out = a.copy()
     out[0::2] = a[0::2] ** 2 - a[1::2] ** 2
-    out[1::2] = 2 * a[0::2] ** 2 - a[1::2] ** 2
+    out[1::2] = 2 * a[0::2] * a[1::2]
     return out
 
 
@@ -174,23 +182,26 @@ class GinzburgLandauReal(object):
             pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[EnergyPrime(mu)])
         )
         out = keo_prime * psi
-        # same as in f()
-        i_psi = to_real(1j * to_complex(psi))
-        out -= self.inner(i_psi, out) / self.inner(i_psi, i_psi) * i_psi
+        # # same as in f()
+        # i_psi = to_real(1j * to_complex(psi))
+        # out -= self.inner(i_psi, out) / self.inner(i_psi, i_psi) * i_psi
         return out
 
     def jacobian(self, psi, mu):
         keo = split_sparse_matrix(
             pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
         )
+        cv = to_real(self.mesh.control_volumes)
 
         def _apply_jacobian(phi):
-            cv = to_real(self.mesh.control_volumes)
-            y = keo * phi + multiply(cv, alpha * phi + gPsi0Squared * conjugate(phi))
-            return y
+            return (
+                keo * phi + multiply(cv, multiply(alpha, phi) + multiply(beta, conjugate(phi)))
+            )
 
-        alpha = self.V + self.g * 2.0 * abs2(psi)
-        gPsi0Squared = self.g * psi ** 2
+        V = numpy.zeros(cv.shape[0])
+        V[0::2] = self.V
+        alpha = V + self.g * 2.0 * abs2(psi)
+        beta = self.g * square(psi)
 
         num_unknowns = len(self.mesh.node_coords)
         return pykry.LinearOperator(
@@ -207,21 +218,6 @@ class GinzburgLandauReal(object):
         abs_psi2 = numpy.zeros(psi.shape[0])
         abs_psi2[0::2] += psi[0::2] ** 2 + psi[1::2] ** 2
         cv = to_real(self.mesh.control_volumes)
-
-        def jacobian(psi):
-            def _apply_jacobian(phi):
-                return keo * phi + alpha * phi + beta * phi.conj()
-
-            alpha = multiply(cv, self.V + self.g * 2.0 * abs_psi2)
-            beta = multiply(cv, self.g * multiply(psi, psi))
-
-            num_unknowns = len(self.mesh.node_coords)
-            return pykry.LinearOperator(
-                (2 * num_unknowns, 2 * num_unknowns),
-                float,
-                dot=_apply_jacobian,
-                dot_adj=_apply_jacobian,
-            )
 
         def prec_inv(psi):
             prec_orig = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
@@ -242,7 +238,7 @@ class GinzburgLandauReal(object):
                 (2 * num_unknowns, 2 * num_unknowns), float, dot=_apply, dot_adj=_apply
             )
 
-        jac = jacobian(psi)
+        jac = self.jacobian(psi, mu)
 
         out = pykry.gmres(
             A=jac,
@@ -353,7 +349,7 @@ def test_f():
 
     numpy.random.seed(123)
 
-    for _ in range(100):
+    for _ in range(10):
         psi = numpy.random.rand(n) + 1j * numpy.random.rand(n)
         mu = numpy.random.rand(1)[0]
         out = gl.f(psi, mu) * mesh.control_volumes
@@ -362,7 +358,61 @@ def test_f():
     return
 
 
+def test_df_dlmbda():
+    from test_ginzburg_landau import GinzburgLandau
+
+    a = 10.0
+    n = 10
+    points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
+    mesh = meshplex.MeshTri(points, cells)
+
+    gl = GinzburgLandau(mesh)
+    glr = GinzburgLandauReal(mesh)
+
+    n = points.shape[0]
+
+    numpy.random.seed(123)
+
+    for _ in range(10):
+        psi = numpy.random.rand(n) + 1j * numpy.random.rand(n)
+        mu = numpy.random.rand(1)[0]
+        out = gl.df_dlmbda(psi, mu) * mesh.control_volumes
+        out2 = glr.df_dlmbda(to_real(psi), mu)
+        assert numpy.all(numpy.abs(out - to_complex(out2)) < 1.0e-12)
+    return
+
+
+def test_jacobian():
+    from test_ginzburg_landau import GinzburgLandau
+
+    a = 10.0
+    n = 10
+    points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
+    mesh = meshplex.MeshTri(points, cells)
+
+    gl = GinzburgLandau(mesh)
+    glr = GinzburgLandauReal(mesh)
+
+    n = points.shape[0]
+
+    numpy.random.seed(123)
+
+    for _ in range(10):
+        psi = numpy.random.rand(n) + 1j * numpy.random.rand(n)
+        mu = numpy.random.rand(1)[0]
+        jac0 = gl.jacobian(psi, mu)
+        jac1 = glr.jacobian(to_real(psi), mu)
+        for _ in range(10):
+            phi = numpy.random.rand(n) + 1j * numpy.random.rand(n)
+            out0 = (jac0 * phi) * mesh.control_volumes
+            out1 = to_complex(jac1 * to_real(phi))
+            assert numpy.all(numpy.abs(out0 - out1) < 1.0e-12)
+    return
+
+
 if __name__ == "__main__":
     # test_self_adjointness()
-    # test_ginzburg_landau(n=20)
-    test_f()
+    test_ginzburg_landau(n=20)
+    # test_f()
+    # test_df_dlmbda()
+    # test_jacobian()
