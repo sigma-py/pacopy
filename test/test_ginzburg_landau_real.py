@@ -203,10 +203,10 @@ class GinzburgLandauReal(object):
         alpha = V + self.g * 2.0 * abs2(psi)
         beta = self.g * square(psi)
 
-        num_unknowns = len(self.mesh.node_coords)
+        num_unknowns = 2 * len(self.mesh.node_coords)
         return pykry.LinearOperator(
             (num_unknowns, num_unknowns),
-            complex,
+            float,
             dot=_apply_jacobian,
             dot_adj=_apply_jacobian,
         )
@@ -243,7 +243,8 @@ class GinzburgLandauReal(object):
         out = pykry.gmres(
             A=jac,
             b=rhs,
-            M=prec(psi),
+            # TODO enable preconditioner
+            # M=prec(psi),
             inner_product=self.inner,
             maxiter=100,
             tol=1.0e-12,
@@ -265,72 +266,6 @@ def test_self_adjointness():
         a0 = problem.inner(u, jac * v)
         a1 = problem.inner(jac * u, v)
         assert abs(a0 - a1) < 1.0e-12
-    return
-
-
-def test_ginzburg_landau(n=20):
-    a = 10.0
-    points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
-    mesh = meshplex.MeshTri(points, cells)
-
-    problem = GinzburgLandauReal(mesh)
-    n = 2 * problem.mesh.control_volumes.shape[0]
-    u0 = numpy.ones(n)
-    u0[1::2] = 0.0
-    mu0 = 0.0
-
-    # plt.ion()
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111)
-    # plt.axis("square")
-    # plt.xlabel("$\\mu$")
-    # plt.ylabel("$||\\psi||_2$")
-    # plt.grid()
-    # b_list = []
-    # values_list = []
-    # line1, = ax.plot(b_list, values_list, "-", color="#1f77f4")
-
-    # def callback(k, b, sol):
-    def callback(k, b, sol):
-        # print(problem.inner(sol, sol))
-        # b_list.append(b)
-        # line1.set_xdata(b_list)
-        # values_list.append(numpy.sqrt(problem.inner(sol, sol)))
-        # line1.set_ydata(values_list)
-        # ax.set_xlim(0.0, 1.0)
-        # ax.set_ylim(0.0, 1.0)
-        # ax.invert_yaxis()
-        # fig.canvas.draw()
-        # fig.canvas.flush_events()
-        # # Store the solution
-        # meshio.write_points_cells(
-        #     "sol{:03d}.vtk".format(k),
-        #     problem.mesh.node_coords,
-        #     {"triangle": problem.mesh.cells["nodes"]},
-        #     point_data={"psi": numpy.array([numpy.real(sol), numpy.imag(sol)]).T},
-        # )
-        return
-
-    # pacopy.natural(
-    #     problem,
-    #     u0,
-    #     b0,
-    #     callback,
-    #     max_steps=1,
-    #     lambda_stepsize0=1.0e-2,
-    #     newton_max_steps=5,
-    #     newton_tol=1.0e-10,
-    # )
-    pacopy.euler_newton(
-        problem,
-        u0,
-        mu0,
-        callback,
-        max_steps=2,
-        stepsize0=1.0e-2,
-        stepsize_max=1.0,
-        newton_tol=1.0e-10,
-    )
     return
 
 
@@ -410,9 +345,76 @@ def test_jacobian():
     return
 
 
+def test_continuation(num_steps=20):
+    a = 10.0
+    n = 10
+    points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
+    mesh = meshplex.MeshTri(points, cells)
+
+    problem = GinzburgLandauReal(mesh)
+    num_unknowns = 2 * problem.mesh.control_volumes.shape[0]
+    u0 = numpy.ones(num_unknowns)
+    u0[1::2] = 0.0
+    mu0 = 0.0
+
+    # plt.ion()
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
+    # plt.axis("square")
+    # plt.xlabel("$\\mu$")
+    # plt.ylabel("$||\\psi||_2$")
+    # plt.grid()
+    # b_list = []
+    # values_list = []
+    # line1, = ax.plot(b_list, values_list, "-", color="#1f77f4")
+
+    # def callback(k, b, sol):
+    def callback(k, b, sol):
+        # print(problem.inner(sol, sol))
+        # b_list.append(b)
+        # line1.set_xdata(b_list)
+        # values_list.append(numpy.sqrt(problem.inner(sol, sol)))
+        # line1.set_ydata(values_list)
+        # ax.set_xlim(0.0, 1.0)
+        # ax.set_ylim(0.0, 1.0)
+        # ax.invert_yaxis()
+        # fig.canvas.draw()
+        # fig.canvas.flush_events()
+        # # Store the solution
+        # meshio.write_points_cells(
+        #     "sol{:03d}.vtk".format(k),
+        #     problem.mesh.node_coords,
+        #     {"triangle": problem.mesh.cells["nodes"]},
+        #     point_data={"psi": numpy.array([numpy.real(sol), numpy.imag(sol)]).T},
+        # )
+        return
+
+    # pacopy.natural(
+    #     problem,
+    #     u0,
+    #     b0,
+    #     callback,
+    #     max_steps=1,
+    #     lambda_stepsize0=1.0e-2,
+    #     newton_max_steps=5,
+    #     newton_tol=1.0e-10,
+    # )
+    pacopy.euler_newton(
+        problem,
+        u0,
+        mu0,
+        callback,
+        max_steps=num_steps,
+        stepsize0=1.0e-2,
+        stepsize_max=1.0,
+        newton_tol=1.0e-10,
+    )
+    return
+
+
 if __name__ == "__main__":
     # test_self_adjointness()
-    test_ginzburg_landau(n=20)
     # test_f()
     # test_df_dlmbda()
     # test_jacobian()
+    test_continuation(num_steps=20)
