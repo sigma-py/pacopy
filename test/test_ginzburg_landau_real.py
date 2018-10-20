@@ -193,23 +193,35 @@ class GinzburgLandauReal(object):
         )
         cv = to_real(self.mesh.control_volumes)
 
-        def _apply_jacobian(phi):
-            return (
-                keo * phi + multiply(cv, multiply(alpha, phi) + multiply(beta, conjugate(phi)))
-            )
-
+        # cv * alpha
         V = numpy.zeros(cv.shape[0])
         V[0::2] = self.V
         alpha = V + self.g * 2.0 * abs2(psi)
-        beta = self.g * square(psi)
+        jac = keo.copy()
+        diag0 = jac.diagonal(0)
+        b = multiply(cv, alpha)[0::2]
+        diag0[0::2] += b
+        diag0[1::2] += b
+        jac.setdiag(diag0, k=0)
 
-        num_unknowns = 2 * len(self.mesh.node_coords)
-        return pykry.LinearOperator(
-            (num_unknowns, num_unknowns),
-            float,
-            dot=_apply_jacobian,
-            dot_adj=_apply_jacobian,
-        )
+        # cv * beta
+        beta = self.g * square(psi)
+        diag0 = jac.diagonal(0)
+        b = multiply(cv, beta)[0::2]
+        diag0[0::2] += b
+        diag0[1::2] -= b
+        jac.setdiag(diag0, k=0)
+        #
+        b = multiply(cv, beta)[1::2]
+        diag1 = jac.diagonal(1)
+        diag1[0::2] += b
+        jac.setdiag(diag1, k=1)
+        #
+        diag2 = jac.diagonal(-1)
+        diag2[0::2] += b
+        jac.setdiag(diag2, k=-1)
+
+        return jac
 
     def jacobian_solver(self, psi, mu, rhs):
         abs_psi2 = numpy.zeros(psi.shape[0])
@@ -245,8 +257,6 @@ class GinzburgLandauReal(object):
             inner_product=self.inner,
             maxiter=100,
             tol=1.0e-12,
-            # Minv=prec_inv(psi),
-            # U=1j * psi,
         )
         return out.xk
 
