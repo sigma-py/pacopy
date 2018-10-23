@@ -48,7 +48,7 @@ def euler_newton(
     cos_alpha_min=0.9,
     theta0=1.0,
     adaptive_theta=False,
-    compute_eigenvalues=False,
+    converge_onto_zero_eigenvalue=False,
 ):
     """Pseudo-arclength continuation.
 
@@ -153,6 +153,11 @@ def euler_newton(
         print("No convergence for initial step.".format(lmbda))
         raise e
 
+    if converge_onto_zero_eigenvalue:
+        # Track _one_ nonzero eigenvalue.
+        tol = 1.0e-10
+        nonzero_eigval, _ = problem.jacobian_eigenvalue(u, lmbda)
+
     ds = abs(stepsize0)
 
     theta = theta0
@@ -179,10 +184,6 @@ def euler_newton(
     du_ds_current = du_ds
     dlmbda_ds_current = dlmbda_ds
     duds2_current = duds2
-
-    if compute_eigenvalues:
-        eigvals = problem.jacobian_eigenvalues(u, lmbda)
-        exit(1)
 
     callback(k, lmbda, u)
     k += 1
@@ -219,6 +220,26 @@ def euler_newton(
             print("Newton convergence failure! Restart with smaller step size.")
             ds *= 0.5
             continue
+
+        if converge_onto_zero_eigenvalue:
+            eigval, eigvec = problem.jacobian_eigenvalue(u, lmbda)
+            is_zero = abs(eigval) < tol
+
+            if is_zero:
+                print("Converged onto zero eigenvalue.")
+                return eigval, eigvec
+            else:
+                # Check if the eigenvalue crossed the origin
+                if (nonzero_eigval > 0 and eigval > 0) or (
+                    nonzero_eigval < 0 and eigval < 0
+                ):
+                    nonzero_eigval = eigval
+                else:
+                    # crossed the origin!
+                    print("Eigenvalue crossed origin! Restart with smaller step size.")
+                    # order 1 approximation for the zero eigenvalue
+                    ds *= nonzero_eigval / (nonzero_eigval - eigval)
+                    continue
 
         # Approximate dlmbda/ds and du/ds for the next predictor step
         if predictor_variant == "tangent":
@@ -317,7 +338,7 @@ def euler_newton(
         )
         ds = min(stepsize_max, ds)
 
-    return None
+    return
 
 
 def _newton_corrector(

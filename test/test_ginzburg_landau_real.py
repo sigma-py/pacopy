@@ -6,10 +6,13 @@ split into real and imaginary part such that all computations are done as float.
 This complicates many things, but can be useful for debugging. This formulation is quite
 close to the original C++ nosh.
 """
+import yaml
+
 import numpy
 import scipy.sparse
 from scipy.sparse.linalg import spsolve
 
+import meshio
 import pykry
 import meshzoo
 import meshplex
@@ -249,6 +252,9 @@ class GinzburgLandauReal(object):
 
         jac = self.jacobian(psi, mu)
 
+        # Cannot use direct solve since jacobian is always singular
+        # return spsolve(jac, rhs)
+
         out = pykry.gmres(
             A=jac,
             b=rhs,
@@ -259,6 +265,38 @@ class GinzburgLandauReal(object):
             tol=1.0e-12,
         )
         return out.xk
+
+    def jacobian_eigenvalue(self, psi, mu):
+        jac = self.jacobian(psi, mu)
+        eigvals, eigvecs = scipy.sparse.linalg.eigsh(jac, 2, which="SM")
+        # ev = numpy.sort(numpy.linalg.eigvalsh(jac.toarray()))
+        # One of the eigenvalues is the one corresponding to psi*i. Filter it out.
+        ipsi = scalar_multiply(1j, psi) / numpy.sqrt(self.inner(psi, psi))
+        # normalize eigenvectors
+        eigvecs[:, 0] /= numpy.sqrt(self.inner(eigvecs[:, 0], eigvecs[:, 0]))
+        eigvecs[:, 1] /= numpy.sqrt(self.inner(eigvecs[:, 1], eigvecs[:, 1]))
+        ev0 = self.inner(eigvecs[:, 0], ipsi)
+        ev1 = self.inner(eigvecs[:, 1], ipsi)
+
+        if numpy.all(numpy.abs(eigvals) < 1.0e-10):
+            # If all eigenvalues are (close to) 0, the eigenvectors are a base of a
+            # 2-dimensional subspace. None of the base vectors necessarily i*psi that
+            # needs to be filtered out. For this reason, take the one that is closest to
+            # i*psi, kick it out, and remove the i*psi part from all other vectors.
+            if ev0 > ev1:
+                eigvecs[:, 1] -= self.inner(ipsi, eigvecs[:, 1]) * ipsi
+                out = eigvals[1], eigvecs[:, 1]
+            else:
+                eigvecs[:, 0] -= self.inner(ipsi, eigvecs[:, 0]) * ipsi
+                out = eigvals[0], eigvecs[:, 0]
+        else:
+            if abs(1.0 - abs(ev0)) < 1.0e-10:
+                out = eigvals[1], eigvecs[:, 1]
+            else:
+                assert abs(1.0 - abs(ev1)) < 1.0e-10
+                out = eigvals[0], eigvecs[:, 0]
+
+        return out
 
 
 def test_self_adjointness():
@@ -357,9 +395,9 @@ def test_jacobian():
     return
 
 
-def test_continuation(num_steps=5):
+def test_continuation(max_steps=5):
     a = 10.0
-    n = 10
+    n = 20
     points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
     mesh = meshplex.MeshTri(points, cells)
 
@@ -380,25 +418,21 @@ def test_continuation(num_steps=5):
     # values_list = []
     # line1, = ax.plot(b_list, values_list, "-", color="#1f77f4")
 
-    # def callback(k, b, sol):
-    def callback(k, b, sol):
-        # print(problem.inner(sol, sol))
-        # b_list.append(b)
-        # line1.set_xdata(b_list)
-        # values_list.append(numpy.sqrt(problem.inner(sol, sol)))
-        # line1.set_ydata(values_list)
-        # ax.set_xlim(0.0, 1.0)
-        # ax.set_ylim(0.0, 1.0)
-        # ax.invert_yaxis()
-        # fig.canvas.draw()
-        # fig.canvas.flush_events()
-        # # Store the solution
-        # meshio.write_points_cells(
-        #     "sol{:03d}.vtk".format(k),
-        #     problem.mesh.node_coords,
-        #     {"triangle": problem.mesh.cells["nodes"]},
-        #     point_data={"psi": numpy.array([numpy.real(sol), numpy.imag(sol)]).T},
-        # )
+    mu_list = []
+
+    filename = "sol.xdmf"
+    writer = meshio.XdmfTimeSeriesWriter(filename)
+    writer.write_points_cells(
+        problem.mesh.node_coords, {"triangle": problem.mesh.cells["nodes"]}
+    )
+
+    def callback(k, mu, sol):
+        mu_list.append(mu)
+        # Store the solution
+        psi = numpy.array([sol[0::2], sol[1::2]]).T
+        writer.write_data(k, point_data={"psi": psi})
+        with open("data.yml", "w") as fh:
+            yaml.dump({"filename": filename, "mu": [float(m) for m in mu_list]}, fh)
         return
 
     # pacopy.natural(
@@ -411,12 +445,22 @@ def test_continuation(num_steps=5):
     #     newton_max_steps=5,
     #     newton_tol=1.0e-10,
     # )
-    pacopy.euler_newton(
+    # pacopy.euler_newton(
+    #     problem,
+    #     u0,
+    #     mu0,
+    #     callback,
+    #     max_steps=num_steps,
+    #     stepsize0=1.0e-2,
+    #     stepsize_max=1.0,
+    #     newton_tol=1.0e-10,
+    # )
+    pacopy.branch_switching(
         problem,
         u0,
         mu0,
         callback,
-        max_steps=num_steps,
+        max_steps=max_steps,
         stepsize0=1.0e-2,
         stepsize_max=1.0,
         newton_tol=1.0e-10,
@@ -429,4 +473,4 @@ if __name__ == "__main__":
     # test_f()
     # test_df_dlmbda()
     # test_jacobian()
-    test_continuation(num_steps=20)
+    test_continuation(max_steps=100)
