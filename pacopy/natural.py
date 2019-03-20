@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 #
+from collections import deque
+
 from .newton import newton, NewtonConvergenceError
 
 
@@ -16,6 +18,7 @@ def natural(
     max_steps=float("inf"),
     verbose=True,
     use_first_order_predictor=True,
+    milestones=None,
 ):
     """Natural parameter continuation.
 
@@ -42,8 +45,11 @@ def natural(
             to bootstrap the Newton process for the next iteration (order 0). Another
             possibility is to use :math:`u - s J^{-1}(u, \\lambda)
             \\frac{df}{d\\lambda}`, a first-order approximation.
+        milestones (Optional[Iterable[float]]): Don't step over these values.
     """
     lmbda = lambda0
+    milestones = deque(milestones if milestones is not None
+                       else [float("inf")])
 
     k = 0
     try:
@@ -63,7 +69,8 @@ def natural(
     k += 1
 
     lambda_stepsize = lambda_stepsize0
-
+    milestone = milestones.popleft()
+    
     while True:
         if k > max_steps:
             break
@@ -76,7 +83,7 @@ def natural(
             )
 
         # Predictor
-        lmbda += lambda_stepsize
+        lmbda = min(lmbda + lambda_stepsize, milestone)
         if use_first_order_predictor:
             du_dlmbda = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
             u0 = u + du_dlmbda * lambda_stepsize
@@ -109,5 +116,10 @@ def natural(
 
         callback(k, lmbda, u)
         k += 1
+        if lmbda == milestone:
+            try:
+                milestone = milestones.popleft()
+            except IndexError:
+                break
 
     return
