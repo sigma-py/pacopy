@@ -48,8 +48,7 @@ def natural(
         milestones (Optional[Iterable[float]]): Don't step over these values.
     """
     lmbda = lambda0
-    milestones = deque(milestones if milestones is not None
-                       else [float("inf")])
+    milestones = deque(milestones if milestones is not None else [float("inf")])
 
     k = 0
     try:
@@ -70,7 +69,7 @@ def natural(
 
     lambda_stepsize = lambda_stepsize0
     milestone = milestones.popleft()
-    
+
     while True:
         if k > max_steps:
             break
