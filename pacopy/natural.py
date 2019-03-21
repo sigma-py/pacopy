@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 #
-from collections import deque
-
 from .newton import newton, NewtonConvergenceError
 
 
@@ -48,7 +46,8 @@ def natural(
         milestones (Optional[Iterable[float]]): Don't step over these values.
     """
     lmbda = lambda0
-    milestones = deque(milestones if milestones is not None else [float("inf")])
+    if milestones is not None:
+        lambdas = iter(milestones)
 
     k = 0
     try:
@@ -68,7 +67,8 @@ def natural(
     k += 1
 
     lambda_stepsize = lambda_stepsize0
-    milestone = milestones.popleft()
+    if milestones is not None:
+        milestone = next(lambdas)
 
     while True:
         if k > max_steps:
@@ -82,7 +82,10 @@ def natural(
             )
 
         # Predictor
-        lmbda = min(lmbda + lambda_stepsize, milestone)
+        if milestones is None:
+            lmbda += lambda_stepsize
+        else:
+            lmbda = min(lmbda + lambda_stepsize, milestone)
         if use_first_order_predictor:
             du_dlmbda = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
             u0 = u + du_dlmbda * lambda_stepsize
@@ -115,10 +118,10 @@ def natural(
 
         callback(k, lmbda, u)
         k += 1
-        if lmbda == milestone:
+        if milestones is not None and lmbda == milestone:
             try:
-                milestone = milestones.popleft()
-            except IndexError:
+                milestone = next(lambdas)
+            except StopIteration:
                 break
 
     return
