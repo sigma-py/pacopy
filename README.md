@@ -14,7 +14,7 @@ pacopy is backend-agnostic, so it doesn't matter if your problem is formulated w
 [SciPy](https://www.scipy.org/), [FEniCS](https://fenicsproject.org/),
 [pyfvm](https://github.com/nschloe/pyfvm), or any other Python package. The only thing
 the user must provide is a class with some simple methods, e.g., a function evaluation
-`f(u, lmbda)`, a Jacobian a solver `jac_solver(u, lmbda, rhs)` etc.
+`f(u, lmbda)`, a Jacobian a solver `jacobian_solver(u, lmbda, rhs)` etc.
 
 Some pacopy documentation is available [here](https://pacopy.readthedocs.org/en/latest/?badge=latest).
 
