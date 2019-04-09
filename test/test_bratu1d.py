@@ -58,10 +58,6 @@ class Bratu1d(object):
         return scipy.sparse.linalg.spsolve(self.jacobian(u, lmbda), rhs)
 
 
-class RangeException(Exception):
-    pass
-
-
 def test_bratu(max_steps=10, update_plot=False):
     problem = Bratu1d()
     u0 = numpy.zeros(problem.n)
@@ -98,9 +94,6 @@ def test_bratu(max_steps=10, update_plot=False):
             ax1.set_xlim(0.0, 4.0)
             ax1.set_ylim(0.0, 6.0)
 
-            if ax1.get_ylim()[1] < val:
-                raise RangeException
-
             # ax1.plot([lmbda_pre], [numpy.sqrt(problem.inner(u_pre, u_pre))], ".r")
 
             # line2.set_ydata(sol)
@@ -127,15 +120,9 @@ def test_bratu(max_steps=10, update_plot=False):
 
     # The condition number of the Jacobian is about 10^4, so we can only expect Newton
     # to converge up to about this factor above machine precision.
-    try:
-        pacopy.euler_newton(
-            problem, u0, lmbda0, callback, max_steps=max_steps, newton_tol=1.0e-10
-        )
-    except RangeException:
-        if update_plot:
-            plt.pause(5)
-            profile_ax.legend()
-            profile_fig.savefig("bratu1d_profiles.png", bbox_inches="tight")
+    pacopy.euler_newton(
+        problem, u0, lmbda0, callback, max_steps=max_steps, newton_tol=1.0e-10
+    )
     return
 
 
