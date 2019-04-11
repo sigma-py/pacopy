@@ -9,7 +9,7 @@ def natural(
     lambda0,
     callback,
     lambda_stepsize0=1.0e-1,
-    lambda_stepsize_max=1.0e0,
+    lambda_stepsize_max=float("inf"),
     lambda_stepsize_aggressiveness=2,
     max_newton_steps=5,
     newton_tol=1.0e-12,
