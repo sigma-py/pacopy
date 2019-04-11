@@ -82,10 +82,9 @@ def natural(
             )
 
         # Predictor
-        if milestones is None:
-            lmbda += lambda_stepsize
-        else:
-            lmbda = min(lmbda + lambda_stepsize, milestone)
+        lmbda += lambda_stepsize
+        if milestones:
+            lmbda = min(lmbda, milestone)
         if use_first_order_predictor:
             du_dlmbda = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
             u0 = u + du_dlmbda * lambda_stepsize
