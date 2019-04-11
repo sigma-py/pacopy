@@ -46,7 +46,8 @@ def natural(
         milestones (Optional[Iterable[float]]): Don't step over these values.
     """
     lmbda = lambda0
-    milestones = iter([] if milestones is None else milestones)
+    if milestones is not None:
+        milestones = iter(milestones)
 
     k = 0
     try:
