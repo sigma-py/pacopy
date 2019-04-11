@@ -46,8 +46,7 @@ def natural(
         milestones (Optional[Iterable[float]]): Don't step over these values.
     """
     lmbda = lambda0
-    if milestones is not None:
-        lambdas = iter(milestones)
+    milestones = iter([] if milestones is None else milestones)
 
     k = 0
     try:
@@ -68,7 +67,7 @@ def natural(
 
     lambda_stepsize = lambda_stepsize0
     if milestones is not None:
-        milestone = next(lambdas)
+        milestone = next(milestones)
 
     while True:
         if k > max_steps:
@@ -119,7 +118,7 @@ def natural(
         k += 1
         if milestones is not None and lmbda == milestone:
             try:
-                milestone = next(lambdas)
+                milestone = next(milestones)
             except StopIteration:
                 break
 
