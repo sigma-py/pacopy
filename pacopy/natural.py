@@ -108,13 +108,6 @@ def natural(
             lambda_stepsize /= 2
             continue
 
-        lambda_stepsize *= (
-            1
-            + lambda_stepsize_aggressiveness
-            * ((max_newton_steps - newton_steps) / (max_newton_steps - 1)) ** 2
-        )
-        lambda_stepsize = min(lambda_stepsize, lambda_stepsize_max)
-
         callback(k, lmbda, u)
         k += 1
         if milestones is not None and lmbda == milestone:
@@ -122,5 +115,12 @@ def natural(
                 milestone = next(milestones)
             except StopIteration:
                 break
+        else:
+            lambda_stepsize *= (
+                1
+                + lambda_stepsize_aggressiveness
+                * ((max_newton_steps - newton_steps) / (max_newton_steps - 1)) ** 2
+            )
+            lambda_stepsize = min(lambda_stepsize, lambda_stepsize_max)
 
     return
