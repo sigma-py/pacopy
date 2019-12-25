@@ -410,7 +410,7 @@ def test_continuation(max_steps=5):
     mu_list = []
 
     filename = "sol.xdmf"
-    writer = meshio.XdmfTimeSeriesWriter(filename)
+    writer = meshio.xdmf.TimeSeriesWriter(filename)
     writer.write_points_cells(
         problem.mesh.node_coords, {"triangle": problem.mesh.cells["nodes"]}
     )

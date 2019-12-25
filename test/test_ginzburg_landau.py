@@ -280,7 +280,7 @@ def test_ginzburg_landau(max_steps=5, n=20):
     mu_list = []
 
     filename = "sol.xdmf"
-    writer = meshio.XdmfTimeSeriesWriter(filename)
+    writer = meshio.xdmf.TimeSeriesWriter(filename)
     writer.write_points_cells(
         problem.mesh.node_coords, {"triangle": problem.mesh.cells["nodes"]}
     )
@@ -338,7 +338,7 @@ def plot_data():
     with open(filename, "r") as fh:
         data = yaml.safe_load(fh)
 
-    reader = meshio.XdmfTimeSeriesReader(data["filename"])
+    reader = meshio.xdmf.TimeSeriesReader(data["filename"])
     points, cells = reader.read_points_cells()
     x, y, _ = points.T
 
