@@ -78,6 +78,10 @@ def test_bratu(max_steps=10, update_plot=False):
     # line3, = ax2.plot([], [], "-", color="red")
     # line3.set_xdata(numpy.linspace(0.0, 1.0, problem.n))
 
+    milestones = numpy.arange(0.5, 3.2, 0.5)
+    if update_plot:
+        profile_fig, profile_ax = plt.subplots()
+
     def callback(k, lmbda, sol):
         if update_plot:
             line1.set_xdata(numpy.append(line1.get_xdata(), lmbda))
@@ -97,9 +101,19 @@ def test_bratu(max_steps=10, update_plot=False):
             fig.canvas.draw()
             fig.canvas.flush_events()
             # plt.savefig('bratu1d.png', transparent=True, bbox_inches="tight")
+            if lmbda in milestones:
+                profile_ax.plot(numpy.linspace(0.0, 1.0, problem.n), sol, label=lmbda)
         return
 
-    pacopy.natural(problem, u0, lmbda0, callback, max_steps=max_steps)
+    pacopy.natural(
+        problem,
+        u0,
+        lmbda0,
+        callback,
+        max_steps=max_steps,
+        newton_tol=1e-10,
+        milestones=milestones,
+    )
 
     # The condition number of the Jacobian is about 10^4, so we can only expect Newton
     # to converge up to about this factor above machine precision.

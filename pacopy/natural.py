@@ -7,13 +7,14 @@ def natural(
     lambda0,
     callback,
     lambda_stepsize0=1.0e-1,
-    lambda_stepsize_max=1.0e0,
+    lambda_stepsize_max=float("inf"),
     lambda_stepsize_aggressiveness=2,
     max_newton_steps=5,
     newton_tol=1.0e-12,
     max_steps=float("inf"),
     verbose=True,
     use_first_order_predictor=True,
+    milestones=None,
 ):
     """Natural parameter continuation.
 
@@ -40,8 +41,11 @@ def natural(
             to bootstrap the Newton process for the next iteration (order 0). Another
             possibility is to use :math:`u - s J^{-1}(u, \\lambda)
             \\frac{df}{d\\lambda}`, a first-order approximation.
+        milestones (Optional[Iterable[float]]): Don't step over these values.
     """
     lmbda = lambda0
+    if milestones is not None:
+        milestones = iter(milestones)
 
     k = 0
     try:
@@ -61,6 +65,8 @@ def natural(
     k += 1
 
     lambda_stepsize = lambda_stepsize0
+    if milestones is not None:
+        milestone = next(milestones)
 
     while True:
         if k > max_steps:
@@ -74,6 +80,8 @@ def natural(
 
         # Predictor
         lmbda += lambda_stepsize
+        if milestones:
+            lmbda = min(lmbda, milestone)
         if use_first_order_predictor:
             du_dlmbda = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
             u0 = u + du_dlmbda * lambda_stepsize
@@ -97,14 +105,19 @@ def natural(
             lambda_stepsize /= 2
             continue
 
-        lambda_stepsize *= (
-            1
-            + lambda_stepsize_aggressiveness
-            * ((max_newton_steps - newton_steps) / (max_newton_steps - 1)) ** 2
-        )
-        lambda_stepsize = min(lambda_stepsize, lambda_stepsize_max)
-
         callback(k, lmbda, u)
         k += 1
+        if milestones is not None and lmbda == milestone:
+            try:
+                milestone = next(milestones)
+            except StopIteration:
+                break
+        else:
+            lambda_stepsize *= (
+                1
+                + lambda_stepsize_aggressiveness
+                * ((max_newton_steps - newton_steps) / (max_newton_steps - 1)) ** 2
+            )
+            lambda_stepsize = min(lambda_stepsize, lambda_stepsize_max)
 
     return
