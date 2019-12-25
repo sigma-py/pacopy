@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 """
 The same as GinzburgLandau, except that the complex-valued vectors and operators are
 split into real and imaginary part such that all computations are done as float.

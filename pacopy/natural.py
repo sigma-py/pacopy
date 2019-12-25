@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 from .newton import NewtonConvergenceError, newton
 
 

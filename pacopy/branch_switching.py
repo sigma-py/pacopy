@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 from .euler_newton import euler_newton
 
 
