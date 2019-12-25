@@ -28,7 +28,6 @@ def set_dirichlet_rows(matrix, idx):
     d = matrix.diagonal()
     d[idx] = 1.0
     matrix.setdiag(d)
-    return
 
 
 class Brusselator2d(object):
@@ -47,7 +46,6 @@ class Brusselator2d(object):
         self.a = 4.0
         self.d1 = 1.0
         self.d2 = 2.0
-        return
 
     def inner(self, x, y):
         """Inner product in the domain space (functions and such).
@@ -162,11 +160,9 @@ def test_brusselator2d():
             {"triangle": problem.mesh.cells["nodes"]},
             point_data={"u": u, "v": v},
         )
-        return
 
     pacopy.natural(problem, u0, b0, callback, max_steps=100)
     # pacopy.euler_newton(problem, u0, b0, callback, max_steps=100)
-    return
 
 
 if __name__ == "__main__":

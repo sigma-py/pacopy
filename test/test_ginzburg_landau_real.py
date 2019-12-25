@@ -25,7 +25,6 @@ class Energy(object):
         super(Energy, self).__init__()
         self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
         self.subdomains = [None]
-        return
 
     def eval(self, mesh, cell_mask):
         nec = mesh.idx_hierarchy[..., cell_mask]
@@ -59,7 +58,6 @@ class EnergyPrime(object):
         self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
         self.dmagnetic_field_dmu = numpy.array([0.0, 0.0, 1.0])
         self.subdomains = [None]
-        return
 
     def eval(self, mesh, cell_mask):
         nec = mesh.idx_hierarchy[..., cell_mask]
@@ -149,7 +147,6 @@ class GinzburgLandauReal(object):
         self.mesh = mesh
         self.V = -1.0
         self.g = 1.0
-        return
 
     def inner(self, x, y):
         return numpy.dot(x, y)
@@ -312,7 +309,6 @@ def test_self_adjointness():
         a0 = problem.inner(u, jac * v)
         a1 = problem.inner(jac * u, v)
         assert abs(a0 - a1) < 1.0e-12
-    return
 
 
 def test_f():
@@ -336,7 +332,6 @@ def test_f():
         out = gl.f(psi, mu) * mesh.control_volumes
         out2 = glr.f(to_real(psi), mu)
         assert numpy.all(numpy.abs(out - to_complex(out2)) < 1.0e-12)
-    return
 
 
 def test_df_dlmbda():
@@ -360,7 +355,6 @@ def test_df_dlmbda():
         out = gl.df_dlmbda(psi, mu) * mesh.control_volumes
         out2 = glr.df_dlmbda(to_real(psi), mu)
         assert numpy.all(numpy.abs(out - to_complex(out2)) < 1.0e-12)
-    return
 
 
 def test_jacobian():
@@ -388,7 +382,6 @@ def test_jacobian():
             out0 = (jac0 * phi) * mesh.control_volumes
             out1 = to_complex(jac1 * to_real(phi))
             assert numpy.all(numpy.abs(out0 - out1) < 1.0e-12)
-    return
 
 
 def test_continuation(max_steps=5):
@@ -429,7 +422,6 @@ def test_continuation(max_steps=5):
         writer.write_data(k, point_data={"psi": psi})
         with open("data.yml", "w") as fh:
             yaml.dump({"filename": filename, "mu": [float(m) for m in mu_list]}, fh)
-        return
 
     # pacopy.natural(
     #     problem,
@@ -461,7 +453,6 @@ def test_continuation(max_steps=5):
         stepsize_max=1.0,
         newton_tol=1.0e-10,
     )
-    return
 
 
 if __name__ == "__main__":

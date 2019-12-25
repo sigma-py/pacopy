@@ -54,4 +54,3 @@ def branch_switching(
     psi = numpy.array([eigvec[0::2], eigvec[1::2]]).T
     writer.write_data(0, point_data={"psi": psi})
     exit(1)
-    return

@@ -21,7 +21,6 @@ class Energy(object):
         super(Energy, self).__init__()
         self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
         self.subdomains = [None]
-        return
 
     def eval(self, mesh, cell_mask):
         nec = mesh.idx_hierarchy[..., cell_mask]
@@ -55,7 +54,6 @@ class EnergyPrime(object):
         self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
         self.dmagnetic_field_dmu = numpy.array([0.0, 0.0, 1.0])
         self.subdomains = [None]
-        return
 
     def eval(self, mesh, cell_mask):
         nec = mesh.idx_hierarchy[..., cell_mask]
@@ -91,7 +89,6 @@ class GinzburgLandau(object):
         self.mesh = mesh
         self.V = -1.0
         self.g = 1.0
-        return
 
     def inner(self, x, y):
         """This is the special Ginzburg-Landau inner product. *bling bling*
@@ -105,14 +102,12 @@ class GinzburgLandau(object):
         keo = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
         cv = self.mesh.control_volumes
         out = (keo * psi) / cv + (self.V + self.g * numpy.abs(psi) ** 2) * psi
-
         # Algebraically, The inner product of <f(psi), i*psi> is always 0. We project
         # out that component numerically to avoid convergence failure for the Jacobian
         # updates close to a solution. If this is not done, the Krylov method might hang
         # at something like 10^{-7}.
         i_psi = 1j * psi
         out -= self.inner(i_psi, out) / self.inner(i_psi, i_psi) * i_psi
-
         return out
 
     def df_dlmbda(self, psi, mu):
@@ -211,9 +206,8 @@ class GinzburgLandau(object):
 
     def jacobian_eigenvalues(self, psi, mu):
         print("a")
-        jac = self.jacobian(psi, mu)
-        exit(1)
-        return
+        # jac = self.jacobian(psi, mu)
+        # exit(1)
 
 
 # def test_self_adjointness():
@@ -233,8 +227,6 @@ class GinzburgLandau(object):
 #         a0 = problem.inner(u, jac * v)
 #         a1 = problem.inner(jac * u, v)
 #         assert abs(a0 - a1) < 1.0e-12
-#
-#     return
 
 
 def test_f_i_psi():
@@ -253,8 +245,6 @@ def test_f_i_psi():
         psi = numpy.random.rand(n) + 1j * numpy.random.rand(n)
         f = problem.f(psi, mu)
         assert abs(problem.inner(1j * psi, f)) < 1.0e-13
-
-    return
 
 
 def test_df_dlmbda():
@@ -275,8 +265,6 @@ def test_df_dlmbda():
         diff = (problem.f(psi, mu + eps) - problem.f(psi, mu - eps)) / (2 * eps)
         nrm = numpy.dot((out - diff).conj(), out - diff).real
         assert nrm < 1.0e-12
-
-    return
 
 
 def test_ginzburg_landau(max_steps=5, n=20):
@@ -304,7 +292,6 @@ def test_ginzburg_landau(max_steps=5, n=20):
         writer.write_data(k, point_data={"psi": psi})
         with open("data.yml", "w") as fh:
             yaml.dump({"filename": filename, "mu": [float(m) for m in mu_list]}, fh)
-        return
 
     # pacopy.natural(
     #     problem,
@@ -336,7 +323,6 @@ def test_ginzburg_landau(max_steps=5, n=20):
     #     stepsize_max=1.0,
     #     newton_tol=1.0e-10,
     # )
-    return
 
 
 def gibbs_energy(mesh, psi):
@@ -405,8 +391,6 @@ def plot_data():
         plt.savefig(f"fig{k:03d}.png")
         # plt.show()
         plt.close()
-
-    return
 
 
 if __name__ == "__main__":

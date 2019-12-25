@@ -34,7 +34,6 @@ def test_mittelmann_fenics():
             v = TestFunction(self.V)
             self.a = assemble(dot(grad(u), grad(v)) * dx)
             self.m = assemble(u * v * dx)
-            return
 
         def inner(self, a, b):
             return a.inner(self.m * b)
@@ -98,11 +97,9 @@ def test_mittelmann_fenics():
         ax.set_ylim(0.0, 5.0)
         fig.canvas.draw()
         fig.canvas.flush_events()
-        return
 
     # pacopy.natural(problem, u0, lmbda0, callback, max_steps=100)
     pacopy.euler_newton(problem, u0, lmbda0, callback, max_steps=500)
-    return
 
 
 if __name__ == "__main__":

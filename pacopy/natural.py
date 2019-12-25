@@ -119,5 +119,3 @@ def natural(
                 * ((max_newton_steps - newton_steps) / (max_newton_steps - 1)) ** 2
             )
             lambda_stepsize = min(lambda_stepsize, lambda_stepsize_max)
-
-    return

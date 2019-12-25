@@ -25,7 +25,7 @@ def tangent(u, lmbda):
 
        0 = df/du v.
     """
-    return
+    pass
 
 
 def euler_newton(
@@ -336,8 +336,6 @@ def euler_newton(
             * ((max_newton_steps - num_newton_steps) / (max_newton_steps - 1)) ** 2
         )
         ds = min(stepsize_max, ds)
-
-    return
 
 
 def _newton_corrector(

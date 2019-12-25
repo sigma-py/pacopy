@@ -30,7 +30,6 @@ def set_dirichlet_rows(matrix, idx):
     d = matrix.diagonal()
     d[idx] = 1.0
     matrix.setdiag(d)
-    return
 
 
 class AllenCahn(object):
@@ -44,7 +43,6 @@ class AllenCahn(object):
         self.idx_right = numpy.where(self.mesh.node_coords[:, 0] > 1.0 - tol)[0]
         self.idx_bottom = numpy.where(self.mesh.node_coords[:, 1] < tol)[0]
         self.idx_top = numpy.where(self.mesh.node_coords[:, 1] > 1.0 - tol)[0]
-        return
 
     def inner(self, x, y):
         return numpy.dot(x, y)
@@ -104,7 +102,6 @@ def test_jacobian():
         )
         out1 = problem.jacobian(u, delta) * v
         assert numpy.all(numpy.abs(out0 - out1) < 1.0e-10)
-    return
 
 
 @pytest.mark.skip(reason="currently failing")
@@ -146,7 +143,6 @@ def test_allen_cahn():
             point_data={"u": sol},
         )
         # input("Press")
-        return
 
     pacopy.natural(
         problem,
@@ -168,7 +164,6 @@ def test_allen_cahn():
     #     stepsize_max=1.0,
     #     newton_tol=1.0e-10,
     # )
-    return
 
 
 if __name__ == "__main__":

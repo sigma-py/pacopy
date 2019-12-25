@@ -48,7 +48,6 @@ class GrossPitaevskii(object):
         assert numpy.all(self.V >= 0)
 
         self.A, _ = pyfvm.discretize_linear(Poisson(), self.mesh)
-        return
 
     def inner(self, x, y):
         return numpy.real(numpy.dot(x.conj(), self.mesh.control_volumes * y))
@@ -159,13 +158,11 @@ def test_gross_pitaevskii():
             {"triangle": problem.mesh.cells["nodes"]},
             point_data={"psi": numpy.array([numpy.real(sol), numpy.imag(sol)]).T},
         )
-        return
 
     # pacopy.natural(problem, u0, mu0, callback, max_newton_steps=10)
     pacopy.euler_newton(
         problem, u0, mu0, callback, stepsize0=1.0e-2, max_newton_steps=10
     )
-    return
 
 
 if __name__ == "__main__":
