@@ -433,17 +433,7 @@ def test_continuation(max_steps=5):
         #     newton_max_steps=5,
         #     newton_tol=1.0e-10,
         # )
-        # pacopy.euler_newton(
-        #     problem,
-        #     u0,
-        #     mu0,
-        #     callback,
-        #     max_steps=num_steps,
-        #     stepsize0=1.0e-2,
-        #     stepsize_max=1.0,
-        #     newton_tol=1.0e-10,
-        # )
-        pacopy.branch_switching(
+        pacopy.euler_newton(
             problem,
             u0,
             mu0,
@@ -453,6 +443,16 @@ def test_continuation(max_steps=5):
             stepsize_max=1.0,
             newton_tol=1.0e-10,
         )
+        # pacopy.branch_switching(
+        #     problem,
+        #     u0,
+        #     mu0,
+        #     callback,
+        #     max_steps=max_steps,
+        #     stepsize0=1.0e-2,
+        #     stepsize_max=1.0,
+        #     newton_tol=1.0e-10,
+        # )
 
 
 if __name__ == "__main__":
