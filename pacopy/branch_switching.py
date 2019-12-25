@@ -47,6 +47,7 @@ def branch_switching(
 
     import meshio
     import numpy
+
     filename = "ev.xdmf"
     writer = meshio.XdmfTimeSeriesWriter(filename)
     writer.write_points_cells(

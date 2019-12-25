@@ -2,7 +2,7 @@
 #
 import math
 
-from .newton import newton, NewtonConvergenceError
+from .newton import NewtonConvergenceError, newton
 
 
 def tangent(u, lmbda):

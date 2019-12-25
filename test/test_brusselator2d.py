@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
 #
 import matplotlib.pyplot as plt
-import scipy.sparse
-import scipy.sparse.linalg
 import numpy
 import pytest
+import scipy.sparse
+import scipy.sparse.linalg
 
 import meshio
-import meshzoo
 import meshplex
-import pyfvm
-from pyfvm.form_language import integrate, n_dot_grad, dS, Boundary
-
+import meshzoo
 import pacopy
+import pyfvm
+from pyfvm.form_language import Boundary, dS, integrate, n_dot_grad
 
 
 # Just quickly get the diffusion matrix
@@ -146,7 +145,7 @@ def test_brusselator2d():
     plt.ylabel("$||u||_\\infty$")
     b_list = []
     values_list = []
-    line1, = ax.plot(b_list, values_list, "-", color="#1f77f4")
+    (line1,) = ax.plot(b_list, values_list, "-", color="#1f77f4")
 
     def callback(k, b, sol):
         b_list.append(b)

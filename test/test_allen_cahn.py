@@ -13,12 +13,11 @@ import pytest
 from scipy.sparse.linalg import spsolve
 
 import meshio
-import meshzoo
 import meshplex
-import pyfvm
-from pyfvm.form_language import integrate, n_dot_grad, dS
-
+import meshzoo
 import pacopy
+import pyfvm
+from pyfvm.form_language import dS, integrate, n_dot_grad
 
 
 # Just quickly get the diffusion matrix
@@ -127,7 +126,7 @@ def test_allen_cahn():
     plt.grid()
     b_list = []
     values_list = []
-    line1, = ax.plot(b_list, values_list, "-", color="#1f77f4")
+    (line1,) = ax.plot(b_list, values_list, "-", color="#1f77f4")
 
     area = numpy.sum(problem.mesh.control_volumes)
 

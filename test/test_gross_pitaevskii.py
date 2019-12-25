@@ -5,14 +5,13 @@ import numpy
 import pytest
 from scipy.sparse.linalg import spsolve
 
-import pykry
 import meshio
-import meshzoo
 import meshplex
-import pyfvm
-from pyfvm.form_language import dS, n_dot_grad, integrate
-
+import meshzoo
 import pacopy
+import pyfvm
+import pykry
+from pyfvm.form_language import dS, integrate, n_dot_grad
 
 
 # Just quickly get the positive-semidefinite diffusion matrix
@@ -142,7 +141,7 @@ def test_gross_pitaevskii():
     plt.grid()
     b_list = []
     values_list = []
-    line1, = ax.plot(b_list, values_list, "-", color="#1f77f4")
+    (line1,) = ax.plot(b_list, values_list, "-", color="#1f77f4")
 
     area = numpy.sum(problem.mesh.control_volumes)
 

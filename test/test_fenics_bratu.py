@@ -92,7 +92,7 @@ def test_bratu_fenics():
     plt.grid()
     lmbda_list = []
     values_list = []
-    line1, = ax.plot(lmbda_list, values_list, "-", color="#1f77f4")
+    (line1,) = ax.plot(lmbda_list, values_list, "-", color="#1f77f4")
 
     f = XDMFFile("sol.xdmf")
     u = Function(problem.V)

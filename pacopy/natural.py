@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-from .newton import newton, NewtonConvergenceError
+from .newton import NewtonConvergenceError, newton
 
 
 def natural(

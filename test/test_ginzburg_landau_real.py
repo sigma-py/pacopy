@@ -6,19 +6,17 @@ split into real and imaginary part such that all computations are done as float.
 This complicates many things, but can be useful for debugging. This formulation is quite
 close to the original C++ nosh.
 """
-import yaml
-
 import numpy
 import scipy.sparse
+import yaml
 from scipy.sparse.linalg import spsolve
 
 import meshio
-import pykry
-import meshzoo
 import meshplex
-import pyfvm
-
+import meshzoo
 import pacopy
+import pyfvm
+import pykry
 
 
 class Energy(object):

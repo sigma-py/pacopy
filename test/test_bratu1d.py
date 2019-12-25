@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 #
 import matplotlib.pyplot as plt
+import numpy
 import scipy.sparse
 import scipy.sparse.linalg
-import numpy
 
 import pacopy
 
@@ -73,7 +73,7 @@ def test_bratu(max_steps=10, update_plot=False):
     # ax2 = fig.add_subplot(122)
     # ax2.grid()
 
-    line1, = ax1.plot([], [], "-x", color="#1f77f4")
+    (line1,) = ax1.plot([], [], "-x", color="#1f77f4")
 
     # line2, = ax2.plot([], [], "-", color="#1f77f4")
     # line2.set_xdata(numpy.linspace(0.0, 1.0, problem.n))
