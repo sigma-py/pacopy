@@ -21,7 +21,7 @@ jobs:
       - run: sudo apt-get install -y python3-h5py
       - run: pip3 install -U pytest pytest-cov --user
       - checkout
-      - run: pip3 install -r test_requirements.txt --user 
+      - run: pip3 install -r test_requirements.txt --user
       - run: pip3 install . --user
       # The tests
       - run:

@@ -280,49 +280,49 @@ def test_ginzburg_landau(max_steps=5, n=20):
     mu_list = []
 
     filename = "sol.xdmf"
-    writer = meshio.xdmf.TimeSeriesWriter(filename)
-    writer.write_points_cells(
-        problem.mesh.node_coords, {"triangle": problem.mesh.cells["nodes"]}
-    )
+    with meshio.xdmf.TimeSeriesWriter(filename) as writer:
+        writer.write_points_cells(
+            problem.mesh.node_coords, {"triangle": problem.mesh.cells["nodes"]}
+        )
 
-    def callback(k, mu, sol):
-        mu_list.append(mu)
-        # Store the solution
-        psi = numpy.array([numpy.real(sol), numpy.imag(sol)]).T
-        writer.write_data(k, point_data={"psi": psi})
-        with open("data.yml", "w") as fh:
-            yaml.dump({"filename": filename, "mu": [float(m) for m in mu_list]}, fh)
+        def callback(k, mu, sol):
+            mu_list.append(mu)
+            # Store the solution
+            psi = numpy.array([numpy.real(sol), numpy.imag(sol)]).T
+            writer.write_data(k, point_data={"psi": psi})
+            with open("data.yml", "w") as fh:
+                yaml.dump({"filename": filename, "mu": [float(m) for m in mu_list]}, fh)
 
-    # pacopy.natural(
-    #     problem,
-    #     u0,
-    #     mu0,
-    #     callback,
-    #     max_steps=1000,
-    #     lambda_stepsize0=1.0e-2,
-    #     newton_max_steps=5,
-    #     newton_tol=1.0e-10,
-    # )
-    pacopy.euler_newton(
-        problem,
-        u0,
-        mu0,
-        callback,
-        max_steps=max_steps,
-        stepsize0=1.0e-2,
-        stepsize_max=1.0,
-        newton_tol=1.0e-10,
-    )
-    # pacopy.branch_switching(
-    #     problem,
-    #     u0,
-    #     mu0,
-    #     callback,
-    #     max_steps=max_steps,
-    #     stepsize0=1.0e-2,
-    #     stepsize_max=1.0,
-    #     newton_tol=1.0e-10,
-    # )
+        # pacopy.natural(
+        #     problem,
+        #     u0,
+        #     mu0,
+        #     callback,
+        #     max_steps=1000,
+        #     lambda_stepsize0=1.0e-2,
+        #     newton_max_steps=5,
+        #     newton_tol=1.0e-10,
+        # )
+        pacopy.euler_newton(
+            problem,
+            u0,
+            mu0,
+            callback,
+            max_steps=max_steps,
+            stepsize0=1.0e-2,
+            stepsize_max=1.0,
+            newton_tol=1.0e-10,
+        )
+        # pacopy.branch_switching(
+        #     problem,
+        #     u0,
+        #     mu0,
+        #     callback,
+        #     max_steps=max_steps,
+        #     stepsize0=1.0e-2,
+        #     stepsize_max=1.0,
+        #     newton_tol=1.0e-10,
+        # )
 
 
 def gibbs_energy(mesh, psi):
