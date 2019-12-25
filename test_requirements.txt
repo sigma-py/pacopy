@@ -3,7 +3,7 @@ matplotlib
 pykry
 meshzoo
 scipy
-meshio
+meshio[all]
 numpy
 meshplex
 lxml

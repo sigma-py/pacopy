@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 """
 As in
 
@@ -13,12 +11,11 @@ import pytest
 from scipy.sparse.linalg import spsolve
 
 import meshio
-import meshzoo
 import meshplex
-import pyfvm
-from pyfvm.form_language import integrate, n_dot_grad, dS
-
+import meshzoo
 import pacopy
+import pyfvm
+from pyfvm.form_language import dS, integrate, n_dot_grad
 
 
 # Just quickly get the diffusion matrix
@@ -33,7 +30,6 @@ def set_dirichlet_rows(matrix, idx):
     d = matrix.diagonal()
     d[idx] = 1.0
     matrix.setdiag(d)
-    return
 
 
 class AllenCahn(object):
@@ -47,7 +43,6 @@ class AllenCahn(object):
         self.idx_right = numpy.where(self.mesh.node_coords[:, 0] > 1.0 - tol)[0]
         self.idx_bottom = numpy.where(self.mesh.node_coords[:, 1] < tol)[0]
         self.idx_top = numpy.where(self.mesh.node_coords[:, 1] > 1.0 - tol)[0]
-        return
 
     def inner(self, x, y):
         return numpy.dot(x, y)
@@ -107,7 +102,6 @@ def test_jacobian():
         )
         out1 = problem.jacobian(u, delta) * v
         assert numpy.all(numpy.abs(out0 - out1) < 1.0e-10)
-    return
 
 
 @pytest.mark.skip(reason="currently failing")
@@ -127,7 +121,7 @@ def test_allen_cahn():
     plt.grid()
     b_list = []
     values_list = []
-    line1, = ax.plot(b_list, values_list, "-", color="#1f77f4")
+    (line1,) = ax.plot(b_list, values_list, "-", color="#1f77f4")
 
     area = numpy.sum(problem.mesh.control_volumes)
 
@@ -143,13 +137,12 @@ def test_allen_cahn():
         fig.canvas.flush_events()
         # Store the solution
         meshio.write_points_cells(
-            "sol{:03d}.vtk".format(k),
+            f"sol{k:03d}.vtk",
             problem.mesh.node_coords,
             {"triangle": problem.mesh.cells["nodes"]},
             point_data={"u": sol},
         )
         # input("Press")
-        return
 
     pacopy.natural(
         problem,
@@ -171,7 +164,6 @@ def test_allen_cahn():
     #     stepsize_max=1.0,
     #     newton_tol=1.0e-10,
     # )
-    return
 
 
 if __name__ == "__main__":

@@ -1,18 +1,15 @@
-# -*- coding: utf-8 -*-
-#
 import matplotlib.pyplot as plt
 import numpy
 import pytest
 from scipy.sparse.linalg import spsolve
 
-import pykry
 import meshio
-import meshzoo
 import meshplex
-import pyfvm
-from pyfvm.form_language import dS, n_dot_grad, integrate
-
+import meshzoo
 import pacopy
+import pyfvm
+import pykry
+from pyfvm.form_language import dS, integrate, n_dot_grad
 
 
 # Just quickly get the positive-semidefinite diffusion matrix
@@ -51,7 +48,6 @@ class GrossPitaevskii(object):
         assert numpy.all(self.V >= 0)
 
         self.A, _ = pyfvm.discretize_linear(Poisson(), self.mesh)
-        return
 
     def inner(self, x, y):
         return numpy.real(numpy.dot(x.conj(), self.mesh.control_volumes * y))
@@ -142,7 +138,7 @@ def test_gross_pitaevskii():
     plt.grid()
     b_list = []
     values_list = []
-    line1, = ax.plot(b_list, values_list, "-", color="#1f77f4")
+    (line1,) = ax.plot(b_list, values_list, "-", color="#1f77f4")
 
     area = numpy.sum(problem.mesh.control_volumes)
 
@@ -157,18 +153,16 @@ def test_gross_pitaevskii():
         fig.canvas.flush_events()
         # Store the solution
         meshio.write_points_cells(
-            "sol{:03d}.vtk".format(k),
+            f"sol{k:03d}.vtk",
             problem.mesh.node_coords,
             {"triangle": problem.mesh.cells["nodes"]},
             point_data={"psi": numpy.array([numpy.real(sol), numpy.imag(sol)]).T},
         )
-        return
 
     # pacopy.natural(problem, u0, mu0, callback, max_newton_steps=10)
     pacopy.euler_newton(
         problem, u0, mu0, callback, stepsize0=1.0e-2, max_newton_steps=10
     )
-    return
 
 
 if __name__ == "__main__":

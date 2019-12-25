@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 import math
 
 import matplotlib.pyplot as plt
@@ -39,7 +37,6 @@ def test_bratu_fenics():
             v = TestFunction(self.V)
             self.a = assemble(dot(grad(u), grad(v)) * dx)
             self.m = assemble(u * v * dx)
-            return
 
         def inner(self, a, b):
             return a.inner(self.m * b)
@@ -92,7 +89,7 @@ def test_bratu_fenics():
     plt.grid()
     lmbda_list = []
     values_list = []
-    line1, = ax.plot(lmbda_list, values_list, "-", color="#1f77f4")
+    (line1,) = ax.plot(lmbda_list, values_list, "-", color="#1f77f4")
 
     f = XDMFFile("sol.xdmf")
     u = Function(problem.V)
@@ -114,13 +111,11 @@ def test_bratu_fenics():
 
         u.vector()[:] = sol
         f.write(u, k)
-        return
 
     # pacopy.natural(problem, u0, lmbda0, callback, max_steps=100)
     pacopy.euler_newton(
         problem, u0, lmbda0, callback, max_steps=500, newton_tol=1.0e-10
     )
-    return
 
 
 if __name__ == "__main__":

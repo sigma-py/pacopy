@@ -1,19 +1,16 @@
-# -*- coding: utf-8 -*-
-#
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy
+import yaml
 from scipy.sparse.linalg import spsolve
 
 import cplot
-import pykry
 import meshio
-import meshzoo
 import meshplex
-import pyfvm
-import yaml
-
+import meshzoo
 import pacopy
+import pyfvm
+import pykry
 
 
 class Energy(object):
@@ -24,7 +21,6 @@ class Energy(object):
         super(Energy, self).__init__()
         self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
         self.subdomains = [None]
-        return
 
     def eval(self, mesh, cell_mask):
         nec = mesh.idx_hierarchy[..., cell_mask]
@@ -58,7 +54,6 @@ class EnergyPrime(object):
         self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
         self.dmagnetic_field_dmu = numpy.array([0.0, 0.0, 1.0])
         self.subdomains = [None]
-        return
 
     def eval(self, mesh, cell_mask):
         nec = mesh.idx_hierarchy[..., cell_mask]
@@ -92,13 +87,8 @@ class EnergyPrime(object):
 class GinzburgLandau(object):
     def __init__(self, mesh):
         self.mesh = mesh
-
         self.V = -1.0
         self.g = 1.0
-
-        # import matplotlib.pyplot as plt
-        # self.fig1, self.ax1 = plt.subplots()
-        return
 
     def inner(self, x, y):
         """This is the special Ginzburg-Landau inner product. *bling bling*
@@ -112,14 +102,12 @@ class GinzburgLandau(object):
         keo = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
         cv = self.mesh.control_volumes
         out = (keo * psi) / cv + (self.V + self.g * numpy.abs(psi) ** 2) * psi
-
         # Algebraically, The inner product of <f(psi), i*psi> is always 0. We project
         # out that component numerically to avoid convergence failure for the Jacobian
         # updates close to a solution. If this is not done, the Krylov method might hang
         # at something like 10^{-7}.
         i_psi = 1j * psi
         out -= self.inner(i_psi, out) / self.inner(i_psi, i_psi) * i_psi
-
         return out
 
     def df_dlmbda(self, psi, mu):
@@ -130,24 +118,27 @@ class GinzburgLandau(object):
         out -= self.inner(i_psi, out) / self.inner(i_psi, i_psi) * i_psi
         return out
 
-    def jacobian_solver(self, psi, mu, rhs):
+    def jacobian(self, psi, mu):
         keo = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
         cv = self.mesh.control_volumes
 
-        def jacobian(psi):
-            def _apply_jacobian(phi):
-                return (keo * phi) / cv + alpha * phi + beta * phi.conj()
+        def _apply_jacobian(phi):
+            return (keo * phi) / cv + alpha * phi + beta * phi.conj()
 
-            alpha = self.V + self.g * 2.0 * (psi.real ** 2 + psi.imag ** 2)
-            beta = self.g * psi ** 2
+        alpha = self.V + self.g * 2.0 * (psi.real ** 2 + psi.imag ** 2)
+        beta = self.g * psi ** 2
 
-            num_unknowns = len(self.mesh.node_coords)
-            return pykry.LinearOperator(
-                (num_unknowns, num_unknowns),
-                complex,
-                dot=_apply_jacobian,
-                dot_adj=_apply_jacobian,
-            )
+        num_unknowns = len(self.mesh.node_coords)
+        return pykry.LinearOperator(
+            (num_unknowns, num_unknowns),
+            complex,
+            dot=_apply_jacobian,
+            dot_adj=_apply_jacobian,
+        )
+
+    def jacobian_solver(self, psi, mu, rhs):
+        keo = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
+        cv = self.mesh.control_volumes
 
         def prec_inv(psi):
             prec = keo.copy()
@@ -172,7 +163,7 @@ class GinzburgLandau(object):
                 (num_unknowns, num_unknowns), complex, dot=_apply, dot_adj=_apply
             )
 
-        jac = jacobian(psi)
+        jac = self.jacobian(psi, mu)
         out = pykry.gmres(
             A=jac,
             b=rhs,
@@ -213,6 +204,11 @@ class GinzburgLandau(object):
         # print("solution component i*psi", self.inner(i_psi, out.xk) / numpy.sqrt(self.inner(i_psi, i_psi)))
         return out.xk
 
+    def jacobian_eigenvalues(self, psi, mu):
+        print("a")
+        # jac = self.jacobian(psi, mu)
+        # exit(1)
+
 
 # def test_self_adjointness():
 #     points, cells = meshzoo.rectangle(-5.0, 5.0, -5.0, 5.0, 30, 30)
@@ -231,8 +227,6 @@ class GinzburgLandau(object):
 #         a0 = problem.inner(u, jac * v)
 #         a1 = problem.inner(jac * u, v)
 #         assert abs(a0 - a1) < 1.0e-12
-#
-#     return
 
 
 def test_f_i_psi():
@@ -251,8 +245,6 @@ def test_f_i_psi():
         psi = numpy.random.rand(n) + 1j * numpy.random.rand(n)
         f = problem.f(psi, mu)
         assert abs(problem.inner(1j * psi, f)) < 1.0e-13
-
-    return
 
 
 def test_df_dlmbda():
@@ -274,8 +266,6 @@ def test_df_dlmbda():
         nrm = numpy.dot((out - diff).conj(), out - diff).real
         assert nrm < 1.0e-12
 
-    return
-
 
 def test_ginzburg_landau(max_steps=5, n=20):
     a = 10.0
@@ -290,41 +280,49 @@ def test_ginzburg_landau(max_steps=5, n=20):
     mu_list = []
 
     filename = "sol.xdmf"
-    writer = meshio.XdmfTimeSeriesWriter(filename)
-    writer.write_points_cells(
-        problem.mesh.node_coords, {"triangle": problem.mesh.cells["nodes"]}
-    )
+    with meshio.xdmf.TimeSeriesWriter(filename) as writer:
+        writer.write_points_cells(
+            problem.mesh.node_coords, {"triangle": problem.mesh.cells["nodes"]}
+        )
 
-    def callback(k, mu, sol):
-        mu_list.append(mu)
-        # Store the solution
-        psi = numpy.array([numpy.real(sol), numpy.imag(sol)]).T
-        writer.write_data(k, point_data={"psi": psi})
-        with open("data.yml", "w") as fh:
-            yaml.dump({"filename": filename, "mu": [float(m) for m in mu_list]}, fh)
-        return
+        def callback(k, mu, sol):
+            mu_list.append(mu)
+            # Store the solution
+            psi = numpy.array([numpy.real(sol), numpy.imag(sol)]).T
+            writer.write_data(k, point_data={"psi": psi})
+            with open("data.yml", "w") as fh:
+                yaml.dump({"filename": filename, "mu": [float(m) for m in mu_list]}, fh)
 
-    # pacopy.natural(
-    #     problem,
-    #     u0,
-    #     mu0,
-    #     callback,
-    #     max_steps=1000,
-    #     lambda_stepsize0=1.0e-2,
-    #     newton_max_steps=5,
-    #     newton_tol=1.0e-10,
-    # )
-    pacopy.euler_newton(
-        problem,
-        u0,
-        mu0,
-        callback,
-        max_steps=max_steps,
-        stepsize0=1.0e-2,
-        stepsize_max=1.0,
-        newton_tol=1.0e-10,
-    )
-    return
+        # pacopy.natural(
+        #     problem,
+        #     u0,
+        #     mu0,
+        #     callback,
+        #     max_steps=1000,
+        #     lambda_stepsize0=1.0e-2,
+        #     newton_max_steps=5,
+        #     newton_tol=1.0e-10,
+        # )
+        pacopy.euler_newton(
+            problem,
+            u0,
+            mu0,
+            callback,
+            max_steps=max_steps,
+            stepsize0=1.0e-2,
+            stepsize_max=1.0,
+            newton_tol=1.0e-10,
+        )
+        # pacopy.branch_switching(
+        #     problem,
+        #     u0,
+        #     mu0,
+        #     callback,
+        #     max_steps=max_steps,
+        #     stepsize0=1.0e-2,
+        #     stepsize_max=1.0,
+        #     newton_tol=1.0e-10,
+        # )
 
 
 def gibbs_energy(mesh, psi):
@@ -340,7 +338,7 @@ def plot_data():
     with open(filename, "r") as fh:
         data = yaml.safe_load(fh)
 
-    reader = meshio.XdmfTimeSeriesReader(data["filename"])
+    reader = meshio.xdmf.TimeSeriesReader(data["filename"])
     points, cells = reader.read_points_cells()
     x, y, _ = points.T
 
@@ -390,16 +388,14 @@ def plot_data():
         # plt.clim(0.0, 1.0)
 
         plt.tight_layout()
-        plt.savefig("fig{:03d}.png".format(k))
+        plt.savefig(f"fig{k:03d}.png")
         # plt.show()
         plt.close()
-
-    return
 
 
 if __name__ == "__main__":
     # test_self_adjointness()
     # test_f_i_psi()
     # test_df_dlmbda()
-    # test_ginzburg_landau(max_steps=100, n=100)
-    plot_data()
+    test_ginzburg_landau(max_steps=100, n=100)
+    # plot_data()

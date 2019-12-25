@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
-#
 import math
 
-from .newton import newton, NewtonConvergenceError
+from .newton import NewtonConvergenceError, newton
 
 
 def tangent(u, lmbda):
@@ -27,7 +25,7 @@ def tangent(u, lmbda):
 
        0 = df/du v.
     """
-    return
+    pass
 
 
 def euler_newton(
@@ -48,6 +46,7 @@ def euler_newton(
     cos_alpha_min=0.9,
     theta0=1.0,
     adaptive_theta=False,
+    converge_onto_zero_eigenvalue=False,
 ):
     """Pseudo-arclength continuation.
 
@@ -149,8 +148,13 @@ def euler_newton(
             max_iter=max_newton_steps,
         )
     except NewtonConvergenceError as e:
-        print("No convergence for initial step.".format(lmbda))
+        print("No convergence for initial step.")
         raise e
+
+    if converge_onto_zero_eigenvalue:
+        # Track _one_ nonzero eigenvalue.
+        tol = 1.0e-10
+        nonzero_eigval, _ = problem.jacobian_eigenvalue(u, lmbda)
 
     ds = abs(stepsize0)
 
@@ -188,7 +192,7 @@ def euler_newton(
 
         if verbose:
             print()
-            print("Step {}, stepsize: {:.3e}".format(k, ds))
+            print(f"Step {k}, stepsize: {ds:.3e}")
 
         # Predictor
         u = u_current + du_ds_current * ds
@@ -214,6 +218,26 @@ def euler_newton(
             print("Newton convergence failure! Restart with smaller step size.")
             ds *= 0.5
             continue
+
+        if converge_onto_zero_eigenvalue:
+            eigval, eigvec = problem.jacobian_eigenvalue(u, lmbda)
+            is_zero = abs(eigval) < tol
+
+            if is_zero:
+                print("Converged onto zero eigenvalue.")
+                return eigval, eigvec
+            else:
+                # Check if the eigenvalue crossed the origin
+                if (nonzero_eigval > 0 and eigval > 0) or (
+                    nonzero_eigval < 0 and eigval < 0
+                ):
+                    nonzero_eigval = eigval
+                else:
+                    # crossed the origin!
+                    print("Eigenvalue crossed origin! Restart with smaller step size.")
+                    # order 1 approximation for the zero eigenvalue
+                    ds *= nonzero_eigval / (nonzero_eigval - eigval)
+                    continue
 
         # Approximate dlmbda/ds and du/ds for the next predictor step
         if predictor_variant == "tangent":
@@ -270,9 +294,10 @@ def euler_newton(
         if cos_alpha < cos_alpha_min:
             print(
                 (
-                    "Angle between subsequent predictors too large (cos(alpha) = {} < {}). "
+                    "Angle between subsequent predictors too large "
+                    f"(cos(alpha) = {cos_alpha} < {cos_alpha_min}). "
                     "Restart with smaller step size."
-                ).format(cos_alpha, cos_alpha_min)
+                )
             )
             ds *= 0.5
             continue
@@ -311,8 +336,6 @@ def euler_newton(
             * ((max_newton_steps - num_newton_steps) / (max_newton_steps - 1)) ** 2
         )
         ds = min(stepsize_max, ds)
-
-    return None
 
 
 def _newton_corrector(
@@ -355,7 +378,7 @@ def _newton_corrector(
             )
         )
         if problem.norm2_r(r) + q ** 2 < newton_tol ** 2:
-            print("Newton corrector converged after {} steps.".format(num_newton_steps))
+            print(f"Newton corrector converged after {num_newton_steps} steps.")
             print("lmbda = {}, <u, u> = {}".format(lmbda, problem.inner(u, u)))
             newton_success = True
             break

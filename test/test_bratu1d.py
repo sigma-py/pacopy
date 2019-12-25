@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
-#
 import matplotlib.pyplot as plt
+import numpy
 import scipy.sparse
 import scipy.sparse.linalg
-import numpy
 
 import pacopy
 
@@ -21,7 +19,6 @@ class Bratu1d(object):
             scipy.sparse.diags([-1.0, 2.0, -1.0], [-1, 0, 1], shape=(self.n, self.n))
             / h ** 2
         )
-        return
 
     def inner(self, a, b):
         return numpy.dot(a, self.H * b)
@@ -73,7 +70,7 @@ def test_bratu(max_steps=10, update_plot=False):
     # ax2 = fig.add_subplot(122)
     # ax2.grid()
 
-    line1, = ax1.plot([], [], "-x", color="#1f77f4")
+    (line1,) = ax1.plot([], [], "-x", color="#1f77f4")
 
     # line2, = ax2.plot([], [], "-", color="#1f77f4")
     # line2.set_xdata(numpy.linspace(0.0, 1.0, problem.n))
@@ -102,11 +99,9 @@ def test_bratu(max_steps=10, update_plot=False):
             # ax2.set_ylim(0.0, 6.0)
             fig.canvas.draw()
             fig.canvas.flush_events()
-            # plt.savefig('bratu1d.png'.format(k), transparent=True, bbox_inches="tight")
+            # plt.savefig('bratu1d.png', transparent=True, bbox_inches="tight")
             if lmbda in milestones:
                 profile_ax.plot(numpy.linspace(0.0, 1.0, problem.n), sol, label=lmbda)
-
-        return
 
     pacopy.natural(
         problem,
@@ -123,7 +118,6 @@ def test_bratu(max_steps=10, update_plot=False):
     pacopy.euler_newton(
         problem, u0, lmbda0, callback, max_steps=max_steps, newton_tol=1.0e-10
     )
-    return
 
 
 if __name__ == "__main__":

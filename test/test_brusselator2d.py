@@ -1,18 +1,15 @@
-# -*- coding: utf-8 -*-
-#
 import matplotlib.pyplot as plt
-import scipy.sparse
-import scipy.sparse.linalg
 import numpy
 import pytest
+import scipy.sparse
+import scipy.sparse.linalg
 
 import meshio
-import meshzoo
 import meshplex
-import pyfvm
-from pyfvm.form_language import integrate, n_dot_grad, dS, Boundary
-
+import meshzoo
 import pacopy
+import pyfvm
+from pyfvm.form_language import Boundary, dS, integrate, n_dot_grad
 
 
 # Just quickly get the diffusion matrix
@@ -31,7 +28,6 @@ def set_dirichlet_rows(matrix, idx):
     d = matrix.diagonal()
     d[idx] = 1.0
     matrix.setdiag(d)
-    return
 
 
 class Brusselator2d(object):
@@ -50,7 +46,6 @@ class Brusselator2d(object):
         self.a = 4.0
         self.d1 = 1.0
         self.d2 = 2.0
-        return
 
     def inner(self, x, y):
         """Inner product in the domain space (functions and such).
@@ -146,7 +141,7 @@ def test_brusselator2d():
     plt.ylabel("$||u||_\\infty$")
     b_list = []
     values_list = []
-    line1, = ax.plot(b_list, values_list, "-", color="#1f77f4")
+    (line1,) = ax.plot(b_list, values_list, "-", color="#1f77f4")
 
     def callback(k, b, sol):
         b_list.append(b)
@@ -160,16 +155,14 @@ def test_brusselator2d():
         # Store the solution
         u, v = sol
         meshio.write_points_cells(
-            "sol{:03d}.vtk".format(k),
+            f"sol{k:03d}.vtk",
             problem.mesh.node_coords,
             {"triangle": problem.mesh.cells["nodes"]},
             point_data={"u": u, "v": v},
         )
-        return
 
     pacopy.natural(problem, u0, b0, callback, max_steps=100)
     # pacopy.euler_newton(problem, u0, b0, callback, max_steps=100)
-    return
 
 
 if __name__ == "__main__":

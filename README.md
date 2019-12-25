@@ -2,10 +2,11 @@
 
 [![CircleCI](https://img.shields.io/circleci/project/github/nschloe/pacopy/master.svg)](https://circleci.com/gh/nschloe/pacopy/tree/master)
 [![codecov](https://img.shields.io/codecov/c/github/nschloe/pacopy.svg)](https://codecov.io/gh/nschloe/pacopy)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Documentation Status](https://readthedocs.org/projects/pacopy/badge/?version=latest)](https://pacopy.readthedocs.org/en/latest/?badge=latest)
 [![PyPi Version](https://img.shields.io/pypi/v/pacopy.svg)](https://pypi.org/project/pacopy)
 [![GitHub stars](https://img.shields.io/github/stars/nschloe/pacopy.svg?logo=github&label=Stars&logoColor=white)](https://github.com/nschloe/pacopy)
+[![PyPi downloads](https://img.shields.io/pypi/dm/pacopy.svg?style=flat-square)](https://pypistats.org/packages/pacopy)
 
 pacopy provides various algorithms of [numerical parameter
 continuation](https://en.wikipedia.org/wiki/Numerical_continuation) for PDEs in Python.
@@ -43,7 +44,6 @@ class Bratu1d(object):
             scipy.sparse.diags([-1.0, 2.0, -1.0], [-1, 0, 1], shape=(self.n, self.n))
             / h ** 2
         )
-        return
 
     def inner(self, a, b):
         """The inner product of the problem. Can be numpy.dot(a, b), but factoring in
@@ -112,7 +112,6 @@ def callback(k, lmbda, sol):
     ax1.plot(lmbda_list, values_list, "-x", color="#1f77f4")
     ax1.set_xlim(0.0, 4.0)
     ax1.set_ylim(0.0, 6.0)
-    return
 
 # Natural parameter continuation
 # pacopy.natural(problem, u0, lmbda0, callback, max_steps=100)

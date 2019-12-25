@@ -1,23 +1,41 @@
 version: 2
 
 jobs:
+  lint:
+    docker:
+      - image: circleci/python:3
+    steps:
+      - checkout
+      - run: |
+          pip3 install black --user
+          black --check .
+      - run: |
+          pip3 install flake8 --user
+          flake8 .
   build:
     working_directory: ~/work
     docker:
-      - image: ubuntu:18.04
+      - image: circleci/python:3
     steps:
-      - run: apt-get update
-      - run: apt-get install -y git python3-pip
-      - run: apt-get install -y python3-h5py
-      - run: pip3 install -U pytest pytest-cov black flake8
+      - run: sudo apt-get update
+      - run: sudo apt-get install -y python3-h5py
+      - run: pip3 install -U pytest pytest-cov --user
       - checkout
-      - run: pip3 install -r test_requirements.txt
-      - run: pip3 install .
-      # format and lint
-      - run: LC_ALL=C.UTF-8 black --check setup.py pacopy/ test/*.py
-      - run: flake8 setup.py pacopy/ test/*.py
+      - run: pip3 install -r test_requirements.txt --user
+      - run: pip3 install . --user
       # The tests
-      - run: cd test/ && MPLBACKEND=Agg pytest --cov pacopy
+      - run:
+          command: pytest --cov pacopy
+          working_directory: test/
+          env:
+            MPLBACKEND: Agg
       # submit to codecov
-      - run: apt-get install -y curl
-      - run: bash <(curl -s https://codecov.io/bash) -R ~/work
+      - run: sudo apt-get install -y curl
+      - run: bash <(curl -s https://codecov.io/bash)
+
+workflows:
+  version: 2
+  lint_and_build:
+    jobs:
+      - lint
+      - build
