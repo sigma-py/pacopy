@@ -11,7 +11,7 @@ def newton(f, jacobian_solver, norm2, u0, tol=1.0e-10, max_iter=20, verbose=True
     fu = f(u)
     nrm = math.sqrt(norm2(fu))
     if verbose:
-        print("||F(u)|| = {:e}".format(nrm))
+        print(f"||F(u)|| = {nrm:e}")
 
     k = 0
     while k < max_iter:
@@ -23,13 +23,13 @@ def newton(f, jacobian_solver, norm2, u0, tol=1.0e-10, max_iter=20, verbose=True
         nrm = math.sqrt(norm2(fu))
         k += 1
         if verbose:
-            print("||F(u)|| = {:e}".format(nrm))
+            print(f"||F(u)|| = {nrm:e}")
 
     is_converged = nrm < tol
 
     if not is_converged:
         raise NewtonConvergenceError(
-            "Newton's method didn't converge after {} steps.".format(k)
+            f"Newton's method didn't converge after {k} steps."
         )
 
     return u, k

@@ -6,6 +6,7 @@
 [![Documentation Status](https://readthedocs.org/projects/pacopy/badge/?version=latest)](https://pacopy.readthedocs.org/en/latest/?badge=latest)
 [![PyPi Version](https://img.shields.io/pypi/v/pacopy.svg)](https://pypi.org/project/pacopy)
 [![GitHub stars](https://img.shields.io/github/stars/nschloe/pacopy.svg?logo=github&label=Stars&logoColor=white)](https://github.com/nschloe/pacopy)
+[![PyPi downloads](https://img.shields.io/pypi/dm/pacopy.svg?style=flat-square)](https://pypistats.org/packages/pacopy)
 
 pacopy provides various algorithms of [numerical parameter
 continuation](https://en.wikipedia.org/wiki/Numerical_continuation) for PDEs in Python.

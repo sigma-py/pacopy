@@ -148,7 +148,7 @@ def euler_newton(
             max_iter=max_newton_steps,
         )
     except NewtonConvergenceError as e:
-        print("No convergence for initial step.".format(lmbda))
+        print("No convergence for initial step.")
         raise e
 
     if converge_onto_zero_eigenvalue:
@@ -192,7 +192,7 @@ def euler_newton(
 
         if verbose:
             print()
-            print("Step {}, stepsize: {:.3e}".format(k, ds))
+            print(f"Step {k}, stepsize: {ds:.3e}")
 
         # Predictor
         u = u_current + du_ds_current * ds
@@ -294,9 +294,10 @@ def euler_newton(
         if cos_alpha < cos_alpha_min:
             print(
                 (
-                    "Angle between subsequent predictors too large (cos(alpha) = {} < {}). "
+                    "Angle between subsequent predictors too large "
+                    f"(cos(alpha) = {cos_alpha} < {cos_alpha_min}). "
                     "Restart with smaller step size."
-                ).format(cos_alpha, cos_alpha_min)
+                )
             )
             ds *= 0.5
             continue
@@ -379,7 +380,7 @@ def _newton_corrector(
             )
         )
         if problem.norm2_r(r) + q ** 2 < newton_tol ** 2:
-            print("Newton corrector converged after {} steps.".format(num_newton_steps))
+            print(f"Newton corrector converged after {num_newton_steps} steps.")
             print("lmbda = {}, <u, u> = {}".format(lmbda, problem.inner(u, u)))
             newton_success = True
             break

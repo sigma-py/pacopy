@@ -96,7 +96,7 @@ def test_bratu(max_steps=10, update_plot=False):
             # ax2.set_ylim(0.0, 6.0)
             fig.canvas.draw()
             fig.canvas.flush_events()
-            # plt.savefig('bratu1d.png'.format(k), transparent=True, bbox_inches="tight")
+            # plt.savefig('bratu1d.png', transparent=True, bbox_inches="tight")
         return
 
     pacopy.natural(problem, u0, lmbda0, callback, max_steps=max_steps)

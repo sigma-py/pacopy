@@ -140,7 +140,7 @@ def test_allen_cahn():
         fig.canvas.flush_events()
         # Store the solution
         meshio.write_points_cells(
-            "sol{:03d}.vtk".format(k),
+            f"sol{k:03d}.vtk",
             problem.mesh.node_coords,
             {"triangle": problem.mesh.cells["nodes"]},
             point_data={"u": sol},
