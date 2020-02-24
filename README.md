@@ -31,7 +31,7 @@ problem](https://en.wikipedia.org/wiki/Liouville%E2%80%93Bratu%E2%80%93Gelfand_e
 in 1D with Dirichlet boundary conditions. To reproduce the plot, you first have to
 specify the problem; this is the classical finite-difference approximation:
 ```python
-class Bratu1d(object):
+class Bratu1d:
     def __init__(self):
         self.n = 51
         h = 1.0 / (self.n - 1)
@@ -151,17 +151,6 @@ To run the pacopy unit tests, check out this repository and type
 ```
 pytest
 ```
-
-### Distribution
-
-To create a new release
-
-1. bump the `__version__` number,
-
-2. publish to PyPi and GitHub:
-    ```
-    make publish
-    ```
 
 ### License
 

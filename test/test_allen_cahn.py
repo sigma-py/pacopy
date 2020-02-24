@@ -19,7 +19,7 @@ from pyfvm.form_language import dS, integrate, n_dot_grad
 
 
 # Just quickly get the diffusion matrix
-class Poisson(object):
+class Poisson:
     def apply(self, u):
         return integrate(lambda x: n_dot_grad(u(x)), dS)
 
@@ -32,7 +32,7 @@ def set_dirichlet_rows(matrix, idx):
     matrix.setdiag(d)
 
 
-class AllenCahn(object):
+class AllenCahn:
     def __init__(self):
         points, cells = meshzoo.rectangle(0.0, 1.0, 0.0, 1.0, 30, 30)
         self.mesh = meshplex.MeshTri(points, cells)

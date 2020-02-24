@@ -24,7 +24,7 @@ def test_mittelmann_fenics():
         Point,
     )
 
-    class Mittelmann(object):
+    class Mittelmann:
         def __init__(self):
             mesh = RectangleMesh(Point(-0.5, -0.5), Point(+0.5, +0.5), 20, 20)
 

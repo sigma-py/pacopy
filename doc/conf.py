@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Configuration file for the Sphinx documentation builder.
 #
@@ -21,8 +20,8 @@ sys.path.insert(0, os.path.abspath("../"))
 # -- Project information -----------------------------------------------------
 
 project = "pacopy"
-copyright = u"2018, Nico Schlömer"
-author = u"Nico Schlömer"
+copyright = "2018, Nico Schlömer"
+author = "Nico Schlömer"
 
 # The short X.Y version
 version = ""
@@ -129,7 +128,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, "pacopy.tex", "pacopy Documentation", u"Nico Schlömer", "manual")
+    (master_doc, "pacopy.tex", "pacopy Documentation", "Nico Schlömer", "manual")
 ]
 
 

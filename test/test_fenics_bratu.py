@@ -25,7 +25,7 @@ def test_bratu_fenics():
         XDMFFile,
     )
 
-    class Bratu(object):
+    class Bratu:
         def __init__(self):
             self.mesh = UnitSquareMesh(40, 40, "left/right")
 

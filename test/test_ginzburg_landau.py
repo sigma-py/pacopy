@@ -13,12 +13,12 @@ import pyfvm
 import pykry
 
 
-class Energy(object):
+class Energy:
     """Specification of the kinetic energy operator.
     """
 
     def __init__(self, mu):
-        super(Energy, self).__init__()
+        super().__init__()
         self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
         self.subdomains = [None]
 
@@ -45,12 +45,12 @@ class Energy(object):
         )
 
 
-class EnergyPrime(object):
+class EnergyPrime:
     """Derivative by mu.
     """
 
     def __init__(self, mu):
-        super(EnergyPrime, self).__init__()
+        super().__init__()
         self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
         self.dmagnetic_field_dmu = numpy.array([0.0, 0.0, 1.0])
         self.subdomains = [None]
@@ -84,7 +84,7 @@ class EnergyPrime(object):
         )
 
 
-class GinzburgLandau(object):
+class GinzburgLandau:
     def __init__(self, mesh):
         self.mesh = mesh
         self.V = -1.0
@@ -335,7 +335,7 @@ def gibbs_energy(mesh, psi):
 
 def plot_data():
     filename = "data.yml"
-    with open(filename, "r") as fh:
+    with open(filename) as fh:
         data = yaml.safe_load(fh)
 
     reader = meshio.xdmf.TimeSeriesReader(data["filename"])

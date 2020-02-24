@@ -293,11 +293,9 @@ def euler_newton(
         # (2.25) in the LOCA book).
         if cos_alpha < cos_alpha_min:
             print(
-                (
                     "Angle between subsequent predictors too large "
                     f"(cos(alpha) = {cos_alpha} < {cos_alpha_min}). "
                     "Restart with smaller step size."
-                )
             )
             ds *= 0.5
             continue

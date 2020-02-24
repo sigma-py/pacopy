@@ -6,7 +6,7 @@ import scipy.sparse.linalg
 import pacopy
 
 
-class Bratu1d(object):
+class Bratu1d:
     def __init__(self):
         self.n = 51
         h = 1.0 / (self.n - 1)
