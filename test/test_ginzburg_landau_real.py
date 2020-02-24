@@ -22,7 +22,6 @@ class Energy:
     """
 
     def __init__(self, mu):
-        super().__init__()
         self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
         self.subdomains = [None]
 
@@ -54,7 +53,6 @@ class EnergyPrime:
     """
 
     def __init__(self, mu):
-        super().__init__()
         self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
         self.dmagnetic_field_dmu = numpy.array([0.0, 0.0, 1.0])
         self.subdomains = [None]
