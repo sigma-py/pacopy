@@ -6,7 +6,7 @@ import scipy.sparse.linalg
 import pacopy
 
 
-class Bratu1d(object):
+class Bratu1d:
     def __init__(self):
         self.n = 51
         h = 1.0 / (self.n - 1)
@@ -60,26 +60,32 @@ def test_bratu(max_steps=10, update_plot=False):
     u0 = numpy.zeros(problem.n)
     lmbda0 = 0.0
 
+    # https://stackoverflow.com/a/4098938/353337
     plt.ion()
-    fig = plt.figure()
-    ax1 = fig.add_subplot(111)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+    # fig = plt.figure()
+    ax1 = fig.add_subplot(1, 2, 1)
     ax1.set_xlabel("$\\lambda$")
     ax1.set_ylabel("$||u||_2$")
+    ax1.set_xlim(0.0, 4.0)
+    ax1.set_ylim(0.0, 6.0)
     ax1.grid()
 
-    # ax2 = fig.add_subplot(122)
-    # ax2.grid()
+    (line1,) = ax1.plot([], [], "-x", color="C0")
 
-    (line1,) = ax1.plot([], [], "-x", color="#1f77f4")
+    ax2 = fig.add_subplot(1, 2, 2)
+    ax2.set_title("solution")
+    ax2.set_xlim(0.0, 1.0)
+    ax2.set_ylim(0.0, 5.0)
+    ax2.grid()
 
-    # line2, = ax2.plot([], [], "-", color="#1f77f4")
-    # line2.set_xdata(numpy.linspace(0.0, 1.0, problem.n))
-    # line3, = ax2.plot([], [], "-", color="red")
+    (line2,) = ax2.plot([], [], "-", color="C0")
+    line2.set_xdata(numpy.linspace(0.0, 1.0, problem.n))
+
+    # line3, = ax2.plot([], [], "-", color="C1")
     # line3.set_xdata(numpy.linspace(0.0, 1.0, problem.n))
 
     milestones = numpy.arange(0.5, 3.2, 0.5)
-    if update_plot:
-        profile_fig, profile_ax = plt.subplots()
 
     def callback(k, lmbda, sol):
         if update_plot:
@@ -88,20 +94,16 @@ def test_bratu(max_steps=10, update_plot=False):
             val = numpy.sqrt(problem.inner(sol, sol))
             line1.set_ydata(numpy.append(line1.get_ydata(), val))
 
-            ax1.set_xlim(0.0, 4.0)
-            ax1.set_ylim(0.0, 6.0)
+            # ax1.plot(
+            #     [lmbda_pre], [numpy.sqrt(problem.inner(u_pre, u_pre))], ".", color="C1"
+            # )
 
-            # ax1.plot([lmbda_pre], [numpy.sqrt(problem.inner(u_pre, u_pre))], ".r")
-
-            # line2.set_ydata(sol)
+            line2.set_ydata(sol)
             # line3.set_ydata(du_dlmbda)
-            # ax2.set_xlim(0.0, 1.0)
-            # ax2.set_ylim(0.0, 6.0)
+
             fig.canvas.draw()
             fig.canvas.flush_events()
             # plt.savefig('bratu1d.png', transparent=True, bbox_inches="tight")
-            if lmbda in milestones:
-                profile_ax.plot(numpy.linspace(0.0, 1.0, problem.n), sol, label=lmbda)
 
     pacopy.natural(
         problem,
@@ -121,5 +123,5 @@ def test_bratu(max_steps=10, update_plot=False):
 
 
 if __name__ == "__main__":
-    test_bratu(500, update_plot=True)
+    test_bratu(100, update_plot=True)
     # test_self_adjointness()

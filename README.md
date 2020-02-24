@@ -4,6 +4,7 @@
 [![codecov](https://img.shields.io/codecov/c/github/nschloe/pacopy.svg?style=flat-square)](https://codecov.io/gh/nschloe/pacopy)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
 [![Documentation Status](https://readthedocs.org/projects/pacopy/badge/?version=latest)](https://pacopy.readthedocs.org/en/latest/?badge=latest)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/pacopy.svg?style=flat-square)](https://pypi.org/pypi/pacopy/)
 [![PyPi Version](https://img.shields.io/pypi/v/pacopy.svg?style=flat-square)](https://pypi.org/project/pacopy)
 [![GitHub stars](https://img.shields.io/github/stars/nschloe/pacopy.svg?style=flat-square&logo=github&label=Stars&logoColor=white)](https://github.com/nschloe/pacopy)
 [![PyPi downloads](https://img.shields.io/pypi/dm/pacopy.svg?style=flat-square)](https://pypistats.org/packages/pacopy)
@@ -31,7 +32,7 @@ problem](https://en.wikipedia.org/wiki/Liouville%E2%80%93Bratu%E2%80%93Gelfand_e
 in 1D with Dirichlet boundary conditions. To reproduce the plot, you first have to
 specify the problem; this is the classical finite-difference approximation:
 ```python
-class Bratu1d(object):
+class Bratu1d:
     def __init__(self):
         self.n = 51
         h = 1.0 / (self.n - 1)
@@ -151,17 +152,6 @@ To run the pacopy unit tests, check out this repository and type
 ```
 pytest
 ```
-
-### Distribution
-
-To create a new release
-
-1. bump the `__version__` number,
-
-2. publish to PyPi and GitHub:
-    ```
-    make publish
-    ```
 
 ### License
 

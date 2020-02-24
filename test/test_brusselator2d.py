@@ -13,7 +13,7 @@ from pyfvm.form_language import Boundary, dS, integrate, n_dot_grad
 
 
 # Just quickly get the diffusion matrix
-class Poisson(object):
+class Poisson:
     def apply(self, u):
         return integrate(lambda x: n_dot_grad(u(x)), dS)
 
@@ -30,7 +30,7 @@ def set_dirichlet_rows(matrix, idx):
     matrix.setdiag(d)
 
 
-class Brusselator2d(object):
+class Brusselator2d:
     def __init__(self):
         a = 20.0
         points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, 40, 40)

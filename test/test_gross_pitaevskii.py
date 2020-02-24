@@ -13,12 +13,12 @@ from pyfvm.form_language import dS, integrate, n_dot_grad
 
 
 # Just quickly get the positive-semidefinite diffusion matrix
-class Poisson(object):
+class Poisson:
     def apply(self, u):
         return integrate(lambda x: -n_dot_grad(u(x)), dS)
 
 
-class GrossPitaevskii(object):
+class GrossPitaevskii:
     """Describes, for example, Bose-Einstein condensates in a trap potential at very low
     temperatures.
 

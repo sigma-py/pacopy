@@ -17,12 +17,11 @@ import pyfvm
 import pykry
 
 
-class Energy(object):
+class Energy:
     """Specification of the kinetic energy operator.
     """
 
     def __init__(self, mu):
-        super(Energy, self).__init__()
         self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
         self.subdomains = [None]
 
@@ -49,12 +48,11 @@ class Energy(object):
         )
 
 
-class EnergyPrime(object):
+class EnergyPrime:
     """Derivative by mu.
     """
 
     def __init__(self, mu):
-        super(EnergyPrime, self).__init__()
         self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
         self.dmagnetic_field_dmu = numpy.array([0.0, 0.0, 1.0])
         self.subdomains = [None]
@@ -142,7 +140,7 @@ def square(a):
     return out
 
 
-class GinzburgLandauReal(object):
+class GinzburgLandauReal:
     def __init__(self, mesh):
         self.mesh = mesh
         self.V = -1.0
@@ -412,7 +410,7 @@ def test_continuation(max_steps=5):
     filename = "sol.xdmf"
     with meshio.xdmf.TimeSeriesWriter(filename) as writer:
         writer.write_points_cells(
-            problem.mesh.node_coords, {"triangle": problem.mesh.cells["nodes"]}
+            problem.mesh.node_coords, [("triangle", problem.mesh.cells["nodes"])]
         )
 
         def callback(k, mu, sol):
