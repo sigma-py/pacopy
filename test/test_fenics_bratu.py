@@ -8,7 +8,7 @@ import pacopy
 dolfin = pytest.importorskip("dolfin")
 
 
-def test_bratu_fenics():
+def test_bratu_fenics(max_steps=10):
     from dolfin import (
         UnitSquareMesh,
         FunctionSpace,
@@ -28,11 +28,8 @@ def test_bratu_fenics():
     class Bratu:
         def __init__(self):
             self.mesh = UnitSquareMesh(40, 40, "left/right")
-
             self.V = FunctionSpace(self.mesh, "Lagrange", 1)
-
             self.bc = DirichletBC(self.V, 0.0, "on_boundary")
-
             u = TrialFunction(self.V)
             v = TestFunction(self.V)
             self.a = assemble(dot(grad(u), grad(v)) * dx)
@@ -89,12 +86,12 @@ def test_bratu_fenics():
     plt.grid()
     lmbda_list = []
     values_list = []
-    (line1,) = ax.plot(lmbda_list, values_list, "-", color="#1f77f4")
+    (line1,) = ax.plot(lmbda_list, values_list, "-", color="C0")
 
     f = XDMFFile("sol.xdmf")
     u = Function(problem.V)
 
-    def callback(k, lmbda, sol, lmbda_pre, u_pre, du_dlmbda):
+    def callback(k, lmbda, sol):
         lmbda_list.append(lmbda)
         line1.set_xdata(lmbda_list)
         values_list.append(math.sqrt(problem.inner(sol, sol)))
@@ -102,9 +99,8 @@ def test_bratu_fenics():
         ax.set_xlim(0.0, 10.0)
         ax.set_ylim(0.0, 6.0)
 
-        import numpy
-
-        ax.plot([lmbda_pre], [numpy.sqrt(problem.inner(u_pre, u_pre))], ".r")
+        # import numpy
+        # ax.plot([lmbda_pre], [numpy.sqrt(problem.inner(u_pre, u_pre))], ".", color="C1")
 
         fig.canvas.draw()
         fig.canvas.flush_events()
@@ -114,9 +110,9 @@ def test_bratu_fenics():
 
     # pacopy.natural(problem, u0, lmbda0, callback, max_steps=100)
     pacopy.euler_newton(
-        problem, u0, lmbda0, callback, max_steps=500, newton_tol=1.0e-10
+        problem, u0, lmbda0, callback, max_steps=max_steps, newton_tol=1.0e-10
     )
 
 
 if __name__ == "__main__":
-    test_bratu_fenics()
+    test_bratu_fenics(max_step=500)

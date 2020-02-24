@@ -79,7 +79,7 @@ def test_bratu(max_steps=10, update_plot=False):
     ax2.set_ylim(0.0, 5.0)
     ax2.grid()
 
-    line2, = ax2.plot([], [], "-", color="C0")
+    (line2,) = ax2.plot([], [], "-", color="C0")
     line2.set_xdata(numpy.linspace(0.0, 1.0, problem.n))
 
     # line3, = ax2.plot([], [], "-", color="C1")
