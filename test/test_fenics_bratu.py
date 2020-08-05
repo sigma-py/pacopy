@@ -10,19 +10,19 @@ dolfin = pytest.importorskip("dolfin")
 
 def test_bratu_fenics(max_steps=10):
     from dolfin import (
-        UnitSquareMesh,
+        DirichletBC,
+        Function,
         FunctionSpace,
-        dx,
+        TestFunction,
+        TrialFunction,
+        UnitSquareMesh,
+        XDMFFile,
         assemble,
         dot,
-        grad,
-        DirichletBC,
-        TrialFunction,
-        TestFunction,
+        dx,
         exp,
-        Function,
+        grad,
         solve,
-        XDMFFile,
     )
 
     class Bratu:

@@ -1,15 +1,15 @@
 import matplotlib.pyplot as plt
-import numpy
-import pytest
-import scipy.sparse
-import scipy.sparse.linalg
-
 import meshio
 import meshplex
 import meshzoo
-import pacopy
+import numpy
 import pyfvm
+import pytest
+import scipy.sparse
+import scipy.sparse.linalg
 from pyfvm.form_language import Boundary, dS, integrate, n_dot_grad
+
+import pacopy
 
 
 # Just quickly get the diffusion matrix
