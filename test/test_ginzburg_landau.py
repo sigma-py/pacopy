@@ -31,7 +31,6 @@ class Energy:
 
         # project the magnetic potential on the edge at the midpoint
         magnetic_potential = 0.5 * numpy.cross(self.magnetic_field, edge_midpoint)
-
         # The dot product <magnetic_potential, edge>, executed for many
         # points at once; cf. <http://stackoverflow.com/a/26168677/353337>.
         beta = numpy.einsum("...k,...k->...", magnetic_potential, edge)
@@ -231,6 +230,9 @@ def test_f_i_psi():
     """Assert that <f(psi), i psi> == 0.
     """
     points, cells = meshzoo.rectangle(-5.0, 5.0, -5.0, 5.0, 30, 30)
+    # add column with zeros for magnetic potential
+    points = numpy.column_stack([points, numpy.zeros(points.shape[0])])
+
     mesh = meshplex.MeshTri(points, cells)
 
     problem = GinzburgLandau(mesh)
@@ -247,6 +249,9 @@ def test_f_i_psi():
 
 def test_df_dlmbda():
     points, cells = meshzoo.rectangle(-5.0, 5.0, -5.0, 5.0, 30, 30)
+    # add column with zeros for magnetic potential
+    points = numpy.column_stack([points, numpy.zeros(points.shape[0])])
+
     mesh = meshplex.MeshTri(points, cells)
 
     problem = GinzburgLandau(mesh)
@@ -268,6 +273,9 @@ def test_df_dlmbda():
 def test_ginzburg_landau(max_steps=5, n=20):
     a = 10.0
     points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
+    # add column with zeros for magnetic potential
+    points = numpy.column_stack([points, numpy.zeros(points.shape[0])])
+
     mesh = meshplex.MeshTri(points, cells)
 
     problem = GinzburgLandau(mesh)
