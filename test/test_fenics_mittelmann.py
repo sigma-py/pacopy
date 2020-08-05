@@ -10,18 +10,18 @@ dolfin = pytest.importorskip("dolfin")
 
 def test_mittelmann_fenics():
     from dolfin import (
-        RectangleMesh,
+        Function,
         FunctionSpace,
-        dx,
+        Point,
+        RectangleMesh,
+        TestFunction,
+        TrialFunction,
         assemble,
         dot,
-        grad,
-        TrialFunction,
-        TestFunction,
+        dx,
         exp,
-        Function,
+        grad,
         solve,
-        Point,
     )
 
     class Mittelmann:

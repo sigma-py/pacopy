@@ -1,16 +1,16 @@
+import cplot
 import matplotlib
 import matplotlib.pyplot as plt
-import numpy
-import yaml
-from scipy.sparse.linalg import spsolve
-
-import cplot
 import meshio
 import meshplex
 import meshzoo
-import pacopy
+import numpy
 import pyfvm
 import pykry
+import yaml
+from scipy.sparse.linalg import spsolve
+
+import pacopy
 
 
 class Energy:

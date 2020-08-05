@@ -6,16 +6,16 @@ Deflation echniques for finding distinct solutions of nonlinear partial differen
 equations.
 """
 import matplotlib.pyplot as plt
-import numpy
-import pytest
-from scipy.sparse.linalg import spsolve
-
 import meshio
 import meshplex
 import meshzoo
-import pacopy
+import numpy
 import pyfvm
+import pytest
 from pyfvm.form_language import dS, integrate, n_dot_grad
+from scipy.sparse.linalg import spsolve
+
+import pacopy
 
 
 # Just quickly get the diffusion matrix
