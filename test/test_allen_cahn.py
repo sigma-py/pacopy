@@ -39,10 +39,10 @@ class AllenCahn:
         # This matrix self.A is negative semidefinite
         self.A, _ = pyfvm.discretize_linear(Poisson(), self.mesh)
         tol = 1.0e-12
-        self.idx_left = numpy.where(self.mesh.node_coords[:, 0] < tol)[0]
-        self.idx_right = numpy.where(self.mesh.node_coords[:, 0] > 1.0 - tol)[0]
-        self.idx_bottom = numpy.where(self.mesh.node_coords[:, 1] < tol)[0]
-        self.idx_top = numpy.where(self.mesh.node_coords[:, 1] > 1.0 - tol)[0]
+        self.idx_left = numpy.where(self.mesh.points[:, 0] < tol)[0]
+        self.idx_right = numpy.where(self.mesh.points[:, 0] > 1.0 - tol)[0]
+        self.idx_bottom = numpy.where(self.mesh.points[:, 1] < tol)[0]
+        self.idx_top = numpy.where(self.mesh.points[:, 1] > 1.0 - tol)[0]
 
     def inner(self, x, y):
         return numpy.dot(x, y)
@@ -138,8 +138,8 @@ def test_allen_cahn():
         # Store the solution
         meshio.write_points_cells(
             f"sol{k:03d}.vtk",
-            problem.mesh.node_coords,
-            {"triangle": problem.mesh.cells["nodes"]},
+            problem.mesh.points,
+            {"triangle": problem.mesh.cells["points"]},
             point_data={"u": sol},
         )
         # input("Press")

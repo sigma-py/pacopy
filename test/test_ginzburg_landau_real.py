@@ -18,8 +18,7 @@ import pacopy
 
 
 class Energy:
-    """Specification of the kinetic energy operator.
-    """
+    """Specification of the kinetic energy operator."""
 
     def __init__(self, mu):
         self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
@@ -27,7 +26,7 @@ class Energy:
 
     def eval(self, mesh, cell_mask):
         nec = mesh.idx_hierarchy[..., cell_mask]
-        X = mesh.node_coords[nec]
+        X = mesh.points[nec]
 
         edge_midpoint = 0.5 * (X[0] + X[1])
         edge = X[1] - X[0]
@@ -49,8 +48,7 @@ class Energy:
 
 
 class EnergyPrime:
-    """Derivative by mu.
-    """
+    """Derivative by mu."""
 
     def __init__(self, mu):
         self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
@@ -59,7 +57,7 @@ class EnergyPrime:
 
     def eval(self, mesh, cell_mask):
         nec = mesh.idx_hierarchy[..., cell_mask]
-        X = mesh.node_coords[nec]
+        X = mesh.points[nec]
 
         edge_midpoint = 0.5 * (X[0] + X[1])
         edge = X[1] - X[0]
@@ -236,7 +234,7 @@ class GinzburgLandauReal:
                 out = spsolve(p, phi)
                 return out
 
-            num_unknowns = len(self.mesh.node_coords)
+            num_unknowns = len(self.mesh.points)
             return pykry.LinearOperator(
                 (2 * num_unknowns, 2 * num_unknowns), float, dot=_apply, dot_adj=_apply
             )
@@ -425,7 +423,7 @@ def test_continuation(max_steps=5):
     filename = "sol.xdmf"
     with meshio.xdmf.TimeSeriesWriter(filename) as writer:
         writer.write_points_cells(
-            problem.mesh.node_coords, [("triangle", problem.mesh.cells["nodes"])]
+            problem.mesh.points, [("triangle", problem.mesh.cells["points"])]
         )
 
         def callback(k, mu, sol):

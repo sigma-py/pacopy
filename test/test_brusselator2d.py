@@ -48,16 +48,14 @@ class Brusselator2d:
         self.d2 = 2.0
 
     def inner(self, x, y):
-        """Inner product in the domain space (functions and such).
-        """
+        """Inner product in the domain space (functions and such)."""
         ux, vx = x
         uy, vy = y
         cv = self.mesh.control_volumes
         return numpy.dot(ux, cv * uy) + numpy.dot(vx, cv * vy)
 
     def norm2_r(self, q):
-        """Squared norm in the range space (residuals and such).
-        """
+        """Squared norm in the range space (residuals and such)."""
         u, v = q
         return numpy.dot(u, u) + numpy.dot(v, v)
 
@@ -156,8 +154,8 @@ def test_brusselator2d():
         u, v = sol
         meshio.write_points_cells(
             f"sol{k:03d}.vtk",
-            problem.mesh.node_coords,
-            {"triangle": problem.mesh.cells["nodes"]},
+            problem.mesh.points,
+            {"triangle": problem.mesh.cells["points"]},
             point_data={"u": u, "v": v},
         )
 

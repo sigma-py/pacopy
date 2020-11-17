@@ -14,8 +14,7 @@ import pacopy
 
 
 class Energy:
-    """Specification of the kinetic energy operator.
-    """
+    """Specification of the kinetic energy operator."""
 
     def __init__(self, mu):
         self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
@@ -23,7 +22,7 @@ class Energy:
 
     def eval(self, mesh, cell_mask):
         nec = mesh.idx_hierarchy[..., cell_mask]
-        X = mesh.node_coords[nec]
+        X = mesh.points[nec]
 
         edge_midpoint = 0.5 * (X[0] + X[1])
         edge = X[1] - X[0]
@@ -44,8 +43,7 @@ class Energy:
 
 
 class EnergyPrime:
-    """Derivative by mu.
-    """
+    """Derivative by mu."""
 
     def __init__(self, mu):
         self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
@@ -54,7 +52,7 @@ class EnergyPrime:
 
     def eval(self, mesh, cell_mask):
         nec = mesh.idx_hierarchy[..., cell_mask]
-        X = mesh.node_coords[nec]
+        X = mesh.points[nec]
 
         edge_midpoint = 0.5 * (X[0] + X[1])
         edge = X[1] - X[0]
@@ -88,8 +86,7 @@ class GinzburgLandau:
         self.g = 1.0
 
     def inner(self, x, y):
-        """This is the special Ginzburg-Landau inner product. *bling bling*
-        """
+        """This is the special Ginzburg-Landau inner product. *bling bling*"""
         return numpy.real(numpy.dot(x.conj(), self.mesh.control_volumes * y))
 
     def norm2_r(self, q):
@@ -125,7 +122,7 @@ class GinzburgLandau:
         alpha = self.V + self.g * 2.0 * (psi.real ** 2 + psi.imag ** 2)
         beta = self.g * psi ** 2
 
-        num_unknowns = len(self.mesh.node_coords)
+        num_unknowns = len(self.mesh.points)
         return pykry.LinearOperator(
             (num_unknowns, num_unknowns),
             complex,
@@ -155,7 +152,7 @@ class GinzburgLandau:
                 out = spsolve(p, phi)
                 return out
 
-            num_unknowns = len(self.mesh.node_coords)
+            num_unknowns = len(self.mesh.points)
             return pykry.LinearOperator(
                 (num_unknowns, num_unknowns), complex, dot=_apply, dot_adj=_apply
             )
@@ -227,8 +224,7 @@ class GinzburgLandau:
 
 
 def test_f_i_psi():
-    """Assert that <f(psi), i psi> == 0.
-    """
+    """Assert that <f(psi), i psi> == 0."""
     points, cells = meshzoo.rectangle(-5.0, 5.0, -5.0, 5.0, 30, 30)
     # add column with zeros for magnetic potential
     points = numpy.column_stack([points, numpy.zeros(points.shape[0])])
@@ -288,7 +284,7 @@ def test_ginzburg_landau(max_steps=5, n=20):
     filename = "sol.xdmf"
     with meshio.xdmf.TimeSeriesWriter(filename) as writer:
         writer.write_points_cells(
-            problem.mesh.node_coords, [("triangle", problem.mesh.cells["nodes"])]
+            problem.mesh.points, [("triangle", problem.mesh.cells["points"])]
         )
 
         def callback(k, mu, sol):
@@ -332,8 +328,7 @@ def test_ginzburg_landau(max_steps=5, n=20):
 
 
 def gibbs_energy(mesh, psi):
-    """Compute the Gibbs free energy. Useful for plotting purposes.
-    """
+    """Compute the Gibbs free energy. Useful for plotting purposes."""
     psi2 = psi ** 2
     alpha = -numpy.real(numpy.dot(psi2.conj(), mesh.control_volumes * psi2))
     return alpha / numpy.sum(mesh.control_volumes)

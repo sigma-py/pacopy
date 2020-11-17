@@ -38,7 +38,7 @@ class GrossPitaevskii:
         points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, 50, 50)
         self.mesh = meshplex.MeshTri(points, cells)
 
-        x, y, z = self.mesh.node_coords.T
+        x, y, z = self.mesh.points.T
         assert numpy.all(numpy.abs(z) < 1.0e-15)
 
         self.omega = 0.2
@@ -80,7 +80,7 @@ class GrossPitaevskii:
             # out[self.mesh.is_boundary_node] = 1.0
             return out
 
-        n = len(self.mesh.node_coords)
+        n = len(self.mesh.points)
         jac = pykry.LinearOperator(
             (n, n), complex, dot=_apply_jacobian, dot_adj=_apply_jacobian
         )
@@ -96,7 +96,7 @@ class GrossPitaevskii:
                 out = spsolve(prec, phi)
                 return out
 
-            num_unknowns = len(self.mesh.node_coords)
+            num_unknowns = len(self.mesh.points)
             return pykry.LinearOperator(
                 (num_unknowns, num_unknowns), complex, dot=_apply, dot_adj=_apply
             )
@@ -119,7 +119,7 @@ def test_gross_pitaevskii():
     problem = GrossPitaevskii()
     n = problem.mesh.control_volumes.shape[0]
     u0 = numpy.zeros(n, dtype=complex)
-    x, y, z = problem.mesh.node_coords.T
+    x, y, z = problem.mesh.points.T
     # In the N->0 limit, we can decompose the modes in Cartesian form [7] as being
     # proportional to
     #
@@ -154,8 +154,8 @@ def test_gross_pitaevskii():
         # Store the solution
         meshio.write_points_cells(
             f"sol{k:03d}.vtk",
-            problem.mesh.node_coords,
-            {"triangle": problem.mesh.cells["nodes"]},
+            problem.mesh.points,
+            {"triangle": problem.mesh.cells["points"]},
             point_data={"psi": numpy.array([numpy.real(sol), numpy.imag(sol)]).T},
         )
 
