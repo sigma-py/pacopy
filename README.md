@@ -53,13 +53,11 @@ class Bratu1d:
         return numpy.dot(a, self.H * b)
 
     def norm2_r(self, a):
-        """The norm in the range space; used to determine if a solution has been found.
-        """
+        """The norm in the range space; used to determine if a solution has been found."""
         return numpy.dot(a, a)
 
     def f(self, u, lmbda):
-        """The evaluation of the function to be solved
-        """
+        """The evaluation of the function to be solved"""
         out = self.A.dot(u) - lmbda * numpy.exp(u)
         out[0] = u[0]
         out[-1] = u[-1]
@@ -75,8 +73,7 @@ class Bratu1d:
         return out
 
     def jacobian_solver(self, u, lmbda, rhs):
-        """A solver for the Jacobian problem.
-        """
+        """A solver for the Jacobian problem."""
         M = self.A.copy()
         d = M.diagonal().copy()
         d -= lmbda * numpy.exp(u)
@@ -99,6 +96,8 @@ lmbda0 = 0.0
 
 lmbda_list = []
 values_list = []
+
+
 def callback(k, lmbda, sol):
     # Use the callback for plotting, writing data to files etc.
     fig = plt.figure()
@@ -114,12 +113,11 @@ def callback(k, lmbda, sol):
     ax1.set_xlim(0.0, 4.0)
     ax1.set_ylim(0.0, 6.0)
 
+
 # Natural parameter continuation
 # pacopy.natural(problem, u0, lmbda0, callback, max_steps=100)
 
-pacopy.euler_newton(
-    problem, u0, lmbda0, callback, max_steps=500, newton_tol=1.0e-10
-)
+pacopy.euler_newton(problem, u0, lmbda0, callback, max_steps=500, newton_tol=1.0e-10)
 ```
 
 
