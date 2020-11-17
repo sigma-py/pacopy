@@ -155,7 +155,7 @@ def test_gross_pitaevskii():
         meshio.write_points_cells(
             f"sol{k:03d}.vtk",
             problem.mesh.points,
-            {"triangle": problem.mesh.cells["nodes"]},
+            {"triangle": problem.mesh.cells["points"]},
             point_data={"psi": numpy.array([numpy.real(sol), numpy.imag(sol)]).T},
         )
 

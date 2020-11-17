@@ -423,7 +423,7 @@ def test_continuation(max_steps=5):
     filename = "sol.xdmf"
     with meshio.xdmf.TimeSeriesWriter(filename) as writer:
         writer.write_points_cells(
-            problem.mesh.points, [("triangle", problem.mesh.cells["nodes"])]
+            problem.mesh.points, [("triangle", problem.mesh.cells["points"])]
         )
 
         def callback(k, mu, sol):
