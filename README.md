@@ -12,15 +12,18 @@
 
 
 pacopy provides various algorithms of [numerical parameter
-continuation](https://en.wikipedia.org/wiki/Numerical_continuation) for PDEs in Python.
+continuation](https://en.wikipedia.org/wiki/Numerical_continuation) for ODEs and PDEs in
+Python.
 
 pacopy is backend-agnostic, so it doesn't matter if your problem is formulated with
-[SciPy](https://www.scipy.org/), [FEniCS](https://fenicsproject.org/),
-[pyfvm](https://github.com/nschloe/pyfvm), or any other Python package. The only thing
-the user must provide is a class with some simple methods, e.g., a function evaluation
-`f(u, lmbda)`, a Jacobian a solver `jacobian_solver(u, lmbda, rhs)` etc.
+[NumPy](https://numpy.org/), [SciPy](https://www.scipy.org/),
+[FEniCS](https://fenicsproject.org/), [pyfvm](https://github.com/nschloe/pyfvm), or any
+other Python package. The only thing the user must provide is a class with some simple
+methods, e.g., a function evaluation `f(u, lmbda)`, a Jacobian a solver
+`jacobian_solver(u, lmbda, rhs)` etc.
 
-Some pacopy documentation is available [here](https://pacopy.readthedocs.org/en/latest/?badge=latest).
+Some pacopy documentation is available
+[here](https://pacopy.readthedocs.org/en/latest/?badge=latest).
 
 
 ### Examples
@@ -89,6 +92,76 @@ plt.plot(values_list, lmbda_list, ".-")
 plt.xlabel("$u_1$")
 plt.ylabel("$\\lambda$")
 plt.show()
+```
+
+#### Simple 2D problem
+<img src="https://nschloe.github.io/pacopy/simple2d.svg" width="30%">
+
+A similarly simple example with two unknowns and a parameter. The inner product and
+Jacobian solver are getting more interesting.
+
+```python
+import matplotlib.pyplot as plt
+import numpy as np
+import pacopy
+import scipy
+from mpl_toolkits.mplot3d import Axes3D
+
+
+class SimpleProblem2D:
+    def inner(self, a, b):
+        return np.dot(a, b)
+
+    def norm2_r(self, a):
+        return np.dot(a, a)
+
+    def f(self, u, lmbda):
+        return np.array(
+            [
+                np.sin(u[0]) - lmbda - u[1] ** 2,
+                np.cos(u[1]) * u[1] - lmbda,
+            ]
+        )
+
+    def df_dlmbda(self, u, lmbda):
+        return -np.ones_like(u)
+
+    def jacobian_solver(self, u, lmbda, rhs):
+        A = np.array(
+            [
+                [np.cos(u[0]), -2 * u[1]],
+                [0.0, np.cos(u[1]) - np.sin(u[1]) * u[1]],
+            ]
+        )
+        return np.linalg.solve(A, rhs)
+
+
+problem = SimpleProblem2D()
+# Initial guess and initial parameter value
+u0 = np.zeros(2)
+lmbda0 = 0.0
+
+# Init lists
+lmbda_list = []
+values_list = []
+
+
+def callback(k, lmbda, sol):
+    lmbda_list.append(lmbda)
+    values_list.append(sol)
+
+
+pacopy.euler_newton(problem, u0, lmbda0, callback, max_steps=50, newton_tol=1.0e-10)
+
+# plot solution
+fig = plt.figure()
+ax = fig.add_subplot(111, projection="3d")
+ax.plot(*np.array(values_list).T, lmbda_list, ".-")
+ax.set_xlabel("$u_1$")
+ax.set_ylabel("$u_2$")
+ax.set_zlabel("$\\lambda$")
+# plt.show()
+plt.savefig("simple2d.svg", transparent=True, bbox_inches="tight")
 ```
 
 #### Bratu
@@ -161,6 +234,7 @@ class Bratu1d:
         M.data[1][self.n - 1] = 1.0
         M.data[2][1] = 0.0
         return scipy.sparse.linalg.spsolve(M.tocsr(), rhs)
+
 
 problem = Bratu1d(51)
 # Initial guess and parameter value
