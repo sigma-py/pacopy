@@ -205,7 +205,7 @@ class GinzburgLandau:
 
 
 # def test_self_adjointness():
-#     points, cells = meshzoo.rectangle(-5.0, 5.0, -5.0, 5.0, 30, 30)
+#     points, cells = meshzoo.rectangle_tri((-5.0, 5.0), (5.0, 5.0), 30)
 #     mesh = meshplex.MeshTri(points, cells)
 #
 #     problem = GinzburgLandau(mesh)
@@ -225,7 +225,7 @@ class GinzburgLandau:
 
 def test_f_i_psi():
     """Assert that <f(psi), i psi> == 0."""
-    points, cells = meshzoo.rectangle(-5.0, 5.0, -5.0, 5.0, 30, 30)
+    points, cells = meshzoo.rectangle_tri((-5.0, -5.0), (5.0, 5.0), 30)
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 
@@ -244,7 +244,7 @@ def test_f_i_psi():
 
 
 def test_df_dlmbda():
-    points, cells = meshzoo.rectangle(-5.0, 5.0, -5.0, 5.0, 30, 30)
+    points, cells = meshzoo.rectangle_tri((-5.0, -5.0), (5.0, 5.0), 30)
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 
@@ -268,7 +268,7 @@ def test_df_dlmbda():
 
 def test_ginzburg_landau(max_steps=5, n=20):
     a = 10.0
-    points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
+    points, cells = meshzoo.rectangle_tri((-a / 2, -a / 2), (a / 2, a / 2), n)
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 

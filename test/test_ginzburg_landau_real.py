@@ -291,7 +291,7 @@ class GinzburgLandauReal:
 def test_self_adjointness():
     a = 10.0
     n = 10
-    points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
+    points, cells = meshzoo.rectangle_tri((-a / 2, -a / 2), (a / 2, a / 2), n)
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 
@@ -315,7 +315,7 @@ def test_f():
 
     a = 10.0
     n = 10
-    points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
+    points, cells = meshzoo.rectangle_tri((-a / 2, -a / 2), (a / 2, a / 2), n)
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 
@@ -341,7 +341,7 @@ def test_df_dlmbda():
 
     a = 10.0
     n = 10
-    points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
+    points, cells = meshzoo.rectangle_tri((-a / 2, -a / 2), (a / 2, a / 2), n)
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 
@@ -367,7 +367,7 @@ def test_jacobian():
 
     a = 10.0
     n = 10
-    points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
+    points, cells = meshzoo.rectangle_tri((-a / 2, -a / 2), (a / 2, a / 2), n)
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 
@@ -395,7 +395,7 @@ def test_jacobian():
 def test_continuation(max_steps=5):
     a = 10.0
     n = 20
-    points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
+    points, cells = meshzoo.rectangle_tri((-a / 2, -a / 2), (a / 2, a / 2), n)
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 

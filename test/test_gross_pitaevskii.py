@@ -35,7 +35,7 @@ class GrossPitaevskii:
 
     def __init__(self):
         a = 24.0
-        points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, 50, 50)
+        points, cells = meshzoo.rectangle_tri((-a / 2, -a / 2), (a / 2, a / 2), 50)
         self.mesh = meshplex.MeshTri(points, cells)
 
         x, y, z = self.mesh.points.T
