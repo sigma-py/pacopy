@@ -93,14 +93,16 @@ plt.show()
 
 <img src="https://nschloe.github.io/pacopy/bratu1d.png" width="30%">
 
-The classical [Bratu
+Let's deal with an actual PDE, the classical [Bratu
 problem](https://en.wikipedia.org/wiki/Liouville%E2%80%93Bratu%E2%80%93Gelfand_equation)
-in 1D with Dirichlet boundary conditions. To reproduce the plot, you first have to
-specify the problem; this is the classical finite-difference approximation:
+in 1D with Dirichlet boundary conditions. Now, the solution space isn't scalar, but a
+vector of length `n` (the values of the solution at given points on the 1D interval).
+Inner product and Jacobian solver are now more complicated.
 ```python
+# This is the classical finite-difference approximation
 class Bratu1d:
-    def __init__(self):
-        self.n = 51
+    def __init__(self, n):
+        self.n = n
         h = 1.0 / (self.n - 1)
 
         self.H = np.full(self.n, h)
@@ -150,14 +152,10 @@ class Bratu1d:
         M.data[1][self.n - 1] = 1.0
         M.data[2][1] = 0.0
         return scipy.sparse.linalg.spsolve(M.tocsr(), rhs)
-```
-Then pass the object to any of pacopy's methods, e.g., the Euler-Newton (arclength)
-continuation:
-```python
-problem = Bratu1d()
-# Initial guess
+
+problem = Bratu1d(51)
+# Initial guess and parameter value
 u0 = np.zeros(problem.n)
-# Initial parameter value
 lmbda0 = 0.0
 
 lmbda_list = []
@@ -173,6 +171,7 @@ def callback(k, lmbda, sol):
     ax1.grid()
 
     lmbda_list.append(lmbda)
+    # use the norm of the currentsolution for plotting on the y-axis
     values_list.append(np.sqrt(problem.inner(sol, sol)))
 
     ax1.plot(lmbda_list, values_list, "-x", color="C0")
@@ -209,13 +208,6 @@ Index](https://pypi.org/project/pacopy/), so simply type
 pip install -U pacopy
 ```
 to install or upgrade.
-
-### Testing
-
-To run the pacopy unit tests, check out this repository and type
-```
-pytest
-```
 
 ### License
 
