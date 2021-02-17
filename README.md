@@ -23,6 +23,72 @@ Some pacopy documentation is available [here](https://pacopy.readthedocs.org/en/
 
 ### Examples
 
+#### Basic scalar example
+<img src="https://nschloe.github.io/pacopy/simple.svg" width="30%">
+
+Let's start off with a problem where the solution space is scalar. We try to solve
+`sin(x) - lambda` for different values of `lambda`, stating at 0.
+```python
+import math
+import matplotlib.pyplot as plt
+import pacopy
+
+
+class SimpleScalarProblem:
+    def inner(self, a, b):
+        """The inner product in the problem domain. For scalars, this is just a
+        multiplication.
+        """
+        return a * b
+
+    def norm2_r(self, a):
+        """The norm in the range space; used to determine if a solution has been found."""
+        return a ** 2
+
+    def f(self, u, lmbda):
+        """The evaluation of the function to be solved"""
+        return math.sin(u) - lmbda
+
+    def df_dlmbda(self, u, lmbda):
+        """The function's derivative with respect to the parameter. Used in Euler-Newton
+        continuation.
+        """
+        return -1.0
+
+    def jacobian_solver(self, u, lmbda, rhs):
+        """A solver for the Jacobian problem. For scalars, this is just a division."""
+        return rhs / math.cos(u)
+
+
+problem = SimpleScalarProblem()
+
+lmbda_list = []
+values_list = []
+
+
+def callback(k, lmbda, sol):
+    # Use the callback for plotting, writing data to files etc.
+    lmbda_list.append(lmbda)
+    values_list.append(sol)
+
+
+pacopy.euler_newton(
+    problem,
+    u0=0.0,
+    lmbda0=0.0,
+    callback=callback,
+    max_steps=20,
+    newton_tol=1.0e-10,
+    verbose=False,
+)
+
+# plot solution
+plt.plot(values_list, lmbda_list, ".-")
+plt.xlabel("$u_1$")
+plt.ylabel("$\\lambda$")
+plt.show()
+```
+
 #### Bratu
 
 <img src="https://nschloe.github.io/pacopy/bratu1d.png" width="30%">
@@ -109,7 +175,7 @@ def callback(k, lmbda, sol):
     lmbda_list.append(lmbda)
     values_list.append(np.sqrt(problem.inner(sol, sol)))
 
-    ax1.plot(lmbda_list, values_list, "-x", color="#1f77f4")
+    ax1.plot(lmbda_list, values_list, "-x", color="C0")
     ax1.set_xlim(0.0, 4.0)
     ax1.set_ylim(0.0, 6.0)
 
