@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import meshio
 import meshplex
 import meshzoo
-import numpy
+import numpy as np
 import pyfvm
 import pytest
 from pyfvm.form_language import dS, integrate, n_dot_grad
@@ -39,16 +39,16 @@ class AllenCahn:
         # This matrix self.A is negative semidefinite
         self.A, _ = pyfvm.discretize_linear(Poisson(), self.mesh)
         tol = 1.0e-12
-        self.idx_left = numpy.where(self.mesh.points[:, 0] < tol)[0]
-        self.idx_right = numpy.where(self.mesh.points[:, 0] > 1.0 - tol)[0]
-        self.idx_bottom = numpy.where(self.mesh.points[:, 1] < tol)[0]
-        self.idx_top = numpy.where(self.mesh.points[:, 1] > 1.0 - tol)[0]
+        self.idx_left = np.where(self.mesh.points[:, 0] < tol)[0]
+        self.idx_right = np.where(self.mesh.points[:, 0] > 1.0 - tol)[0]
+        self.idx_bottom = np.where(self.mesh.points[:, 1] < tol)[0]
+        self.idx_top = np.where(self.mesh.points[:, 1] > 1.0 - tol)[0]
 
     def inner(self, x, y):
-        return numpy.dot(x, y)
+        return np.dot(x, y)
 
     def norm2_r(self, q):
-        return numpy.dot(q, q)
+        return np.dot(q, q)
 
     def f(self, u, delta):
         cv = self.mesh.control_volumes
@@ -95,20 +95,20 @@ def test_jacobian():
     delta = 0.04
     eps = 1.0e-5
     for _ in range(100):
-        u = numpy.random.rand(n)
-        v = numpy.random.rand(n)
+        u = np.random.rand(n)
+        v = np.random.rand(n)
         out0 = (problem.f(u + eps * v, delta) - problem.f(u - eps * v, delta)) / (
             2 * eps
         )
         out1 = problem.jacobian(u, delta) * v
-        assert numpy.all(numpy.abs(out0 - out1) < 1.0e-10)
+        assert np.all(np.abs(out0 - out1) < 1.0e-10)
 
 
 @pytest.mark.skip(reason="currently failing")
 def test_allen_cahn():
     problem = AllenCahn()
     n = problem.mesh.control_volumes.shape[0]
-    u0 = numpy.zeros(n, dtype=float)
+    u0 = np.zeros(n, dtype=float)
     # delta0 = 0.04
     delta0 = 0.2
 
@@ -123,7 +123,7 @@ def test_allen_cahn():
     values_list = []
     (line1,) = ax.plot(b_list, values_list, "-", color="#1f77f4")
 
-    area = numpy.sum(problem.mesh.control_volumes)
+    area = np.sum(problem.mesh.control_volumes)
 
     def callback(k, b, sol):
         b_list.append(b)

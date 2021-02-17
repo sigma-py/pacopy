@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import numpy
+import numpy as np
 import scipy.sparse
 import scipy.sparse.linalg
 
@@ -11,7 +11,7 @@ class Bratu1d:
         self.n = 51
         h = 1.0 / (self.n - 1)
 
-        self.H = numpy.full(self.n, h)
+        self.H = np.full(self.n, h)
         self.H[0] = h / 2
         self.H[-1] = h / 2
 
@@ -21,19 +21,19 @@ class Bratu1d:
         )
 
     def inner(self, a, b):
-        return numpy.dot(a, self.H * b)
+        return np.dot(a, self.H * b)
 
     def norm2_r(self, a):
-        return numpy.dot(a, a)
+        return np.dot(a, a)
 
     def f(self, u, lmbda):
-        out = self.A.dot(u) - lmbda * numpy.exp(u)
+        out = self.A.dot(u) - lmbda * np.exp(u)
         out[0] = u[0]
         out[-1] = u[-1]
         return out
 
     def df_dlmbda(self, u, lmbda):
-        out = -numpy.exp(u)
+        out = -np.exp(u)
         out[0] = 0.0
         out[-1] = 0.0
         return out
@@ -41,10 +41,10 @@ class Bratu1d:
     def jacobian(self, u, lmbda):
         M = self.A.copy()
         d = M.diagonal().copy()
-        d -= lmbda * numpy.exp(u)
+        d -= lmbda * np.exp(u)
         M.setdiag(d)
         # Dirichlet conditions
-        assert numpy.all(M.offsets == [-1, 0, 1])
+        assert np.all(M.offsets == [-1, 0, 1])
         M.data[0][self.n - 2] = 0.0
         M.data[1][0] = 1.0
         M.data[1][self.n - 1] = 1.0
@@ -57,7 +57,7 @@ class Bratu1d:
 
 def test_bratu(max_steps=10, update_plot=False):
     problem = Bratu1d()
-    u0 = numpy.zeros(problem.n)
+    u0 = np.zeros(problem.n)
     lmbda0 = 0.0
 
     # https://stackoverflow.com/a/4098938/353337
@@ -80,22 +80,22 @@ def test_bratu(max_steps=10, update_plot=False):
     ax2.grid()
 
     (line2,) = ax2.plot([], [], "-", color="C0")
-    line2.set_xdata(numpy.linspace(0.0, 1.0, problem.n))
+    line2.set_xdata(np.linspace(0.0, 1.0, problem.n))
 
     # line3, = ax2.plot([], [], "-", color="C1")
-    # line3.set_xdata(numpy.linspace(0.0, 1.0, problem.n))
+    # line3.set_xdata(np.linspace(0.0, 1.0, problem.n))
 
-    milestones = numpy.arange(0.5, 3.2, 0.5)
+    milestones = np.arange(0.5, 3.2, 0.5)
 
     def callback(k, lmbda, sol):
         if update_plot:
-            line1.set_xdata(numpy.append(line1.get_xdata(), lmbda))
-            # val = numpy.max(numpy.abs(sol))
-            val = numpy.sqrt(problem.inner(sol, sol))
-            line1.set_ydata(numpy.append(line1.get_ydata(), val))
+            line1.set_xdata(np.append(line1.get_xdata(), lmbda))
+            # val = np.max(np.abs(sol))
+            val = np.sqrt(problem.inner(sol, sol))
+            line1.set_ydata(np.append(line1.get_ydata(), val))
 
             # ax1.plot(
-            #     [lmbda_pre], [numpy.sqrt(problem.inner(u_pre, u_pre))], ".", color="C1"
+            #     [lmbda_pre], [np.sqrt(problem.inner(u_pre, u_pre))], ".", color="C1"
             # )
 
             line2.set_ydata(sol)

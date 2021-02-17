@@ -7,7 +7,7 @@ close to the original C++ nosh.
 import meshio
 import meshplex
 import meshzoo
-import numpy
+import numpy as np
 import pyfvm
 import pykry
 import scipy.sparse
@@ -21,7 +21,7 @@ class Energy:
     """Specification of the kinetic energy operator."""
 
     def __init__(self, mu):
-        self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
+        self.magnetic_field = mu * np.array([0.0, 0.0, 1.0])
         self.subdomains = [None]
 
     def eval(self, mesh, cell_mask):
@@ -33,16 +33,16 @@ class Energy:
         edge_ce_ratio = mesh.ce_ratios[..., cell_mask]
 
         # project the magnetic potential on the edge at the midpoint
-        magnetic_potential = 0.5 * numpy.cross(self.magnetic_field, edge_midpoint)
+        magnetic_potential = 0.5 * np.cross(self.magnetic_field, edge_midpoint)
 
         # The dot product <magnetic_potential, edge>, executed for many
         # points at once; cf. <http://stackoverflow.com/a/26168677/353337>.
-        beta = numpy.einsum("...k,...k->...", magnetic_potential, edge)
+        beta = np.einsum("...k,...k->...", magnetic_potential, edge)
 
-        return numpy.array(
+        return np.array(
             [
-                [edge_ce_ratio, -edge_ce_ratio * numpy.exp(-1j * beta)],
-                [-edge_ce_ratio * numpy.exp(1j * beta), edge_ce_ratio],
+                [edge_ce_ratio, -edge_ce_ratio * np.exp(-1j * beta)],
+                [-edge_ce_ratio * np.exp(1j * beta), edge_ce_ratio],
             ]
         )
 
@@ -51,8 +51,8 @@ class EnergyPrime:
     """Derivative by mu."""
 
     def __init__(self, mu):
-        self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
-        self.dmagnetic_field_dmu = numpy.array([0.0, 0.0, 1.0])
+        self.magnetic_field = mu * np.array([0.0, 0.0, 1.0])
+        self.dmagnetic_field_dmu = np.array([0.0, 0.0, 1.0])
         self.subdomains = [None]
 
     def eval(self, mesh, cell_mask):
@@ -64,31 +64,31 @@ class EnergyPrime:
         edge_ce_ratio = mesh.ce_ratios[..., cell_mask]
 
         # project the magnetic potential on the edge at the midpoint
-        magnetic_potential = 0.5 * numpy.cross(self.magnetic_field, edge_midpoint)
+        magnetic_potential = 0.5 * np.cross(self.magnetic_field, edge_midpoint)
         # <m, edge>
-        beta = numpy.einsum("...k,...k->...", magnetic_potential, edge)
+        beta = np.einsum("...k,...k->...", magnetic_potential, edge)
 
         # project the magnetic potential on the edge at the midpoint
-        dmagnetic_potential_dmu = 0.5 * numpy.cross(
+        dmagnetic_potential_dmu = 0.5 * np.cross(
             self.dmagnetic_field_dmu, edge_midpoint
         )
         # <m, edge>
-        dbeta_dmu = numpy.einsum("...k,...k->...", dmagnetic_potential_dmu, edge)
+        dbeta_dmu = np.einsum("...k,...k->...", dmagnetic_potential_dmu, edge)
 
-        zero = numpy.zeros(edge_ce_ratio.shape, dtype=complex)
-        return numpy.array(
+        zero = np.zeros(edge_ce_ratio.shape, dtype=complex)
+        return np.array(
             [
-                [zero, 1j * dbeta_dmu * edge_ce_ratio * numpy.exp(-1j * beta)],
-                [-1j * dbeta_dmu * edge_ce_ratio * numpy.exp(1j * beta), zero],
+                [zero, 1j * dbeta_dmu * edge_ce_ratio * np.exp(-1j * beta)],
+                [-1j * dbeta_dmu * edge_ce_ratio * np.exp(1j * beta), zero],
             ]
         )
 
 
 def split_sparse_matrix(matrix):
     m = matrix.tocoo()
-    data = numpy.concatenate([m.data.real, -m.data.imag, m.data.imag, m.data.real])
-    row = numpy.concatenate([2 * m.row, 2 * m.row, 2 * m.row + 1, 2 * m.row + 1])
-    col = numpy.concatenate([2 * m.col, 2 * m.col + 1, 2 * m.col, 2 * m.col + 1])
+    data = np.concatenate([m.data.real, -m.data.imag, m.data.imag, m.data.real])
+    row = np.concatenate([2 * m.row, 2 * m.row, 2 * m.row + 1, 2 * m.row + 1])
+    col = np.concatenate([2 * m.col, 2 * m.col + 1, 2 * m.col, 2 * m.col + 1])
     out = scipy.sparse.coo_matrix(
         (data, (row, col)), shape=(2 * m.shape[0], 2 * m.shape[1])
     )
@@ -96,7 +96,7 @@ def split_sparse_matrix(matrix):
 
 
 def to_real(z):
-    x = numpy.empty(2 * z.shape[0])
+    x = np.empty(2 * z.shape[0])
     x[0::2] = z.real
     x[1::2] = z.imag
     return x
@@ -113,14 +113,14 @@ def scalar_multiply(alpha, x):
 
 
 def multiply(a, b):
-    out = numpy.empty(a.shape[0])
+    out = np.empty(a.shape[0])
     out[0::2] = a[0::2] * b[0::2] - a[1::2] * b[1::2]
     out[1::2] = a[0::2] * b[1::2] + a[1::2] * b[0::2]
     return out
 
 
 def abs2(a):
-    out = numpy.zeros(a.shape[0])
+    out = np.zeros(a.shape[0])
     out[0::2] = a[0::2] ** 2 + a[1::2] ** 2
     return out
 
@@ -145,10 +145,10 @@ class GinzburgLandauReal:
         self.g = 1.0
 
     def inner(self, x, y):
-        return numpy.dot(x, y)
+        return np.dot(x, y)
 
     def norm2_r(self, q):
-        return numpy.dot(q, q)
+        return np.dot(q, q)
 
     def f(self, psi, mu):
         keo = split_sparse_matrix(
@@ -156,7 +156,7 @@ class GinzburgLandauReal:
         )
         cv = to_real(self.mesh.control_volumes)
 
-        V = numpy.zeros(cv.shape[0])
+        V = np.zeros(cv.shape[0])
         V[0::2] = self.V
         out = keo * psi + multiply(cv, multiply(psi, V + self.g * abs2(psi)))
 
@@ -186,7 +186,7 @@ class GinzburgLandauReal:
         cv = to_real(self.mesh.control_volumes)
 
         # cv * alpha
-        V = numpy.zeros(cv.shape[0])
+        V = np.zeros(cv.shape[0])
         V[0::2] = self.V
         alpha = V + self.g * 2.0 * abs2(psi)
         jac = keo.copy()
@@ -216,7 +216,7 @@ class GinzburgLandauReal:
         return jac
 
     def jacobian_solver(self, psi, mu, rhs):
-        abs_psi2 = numpy.zeros(psi.shape[0])
+        abs_psi2 = np.zeros(psi.shape[0])
         abs_psi2[0::2] += psi[0::2] ** 2 + psi[1::2] ** 2
         cv = to_real(self.mesh.control_volumes)
 
@@ -258,16 +258,16 @@ class GinzburgLandauReal:
     def jacobian_eigenvalue(self, psi, mu):
         jac = self.jacobian(psi, mu)
         eigvals, eigvecs = scipy.sparse.linalg.eigsh(jac, 2, which="SM")
-        # ev = numpy.sort(numpy.linalg.eigvalsh(jac.toarray()))
+        # ev = np.sort(np.linalg.eigvalsh(jac.toarray()))
         # One of the eigenvalues is the one corresponding to psi*i. Filter it out.
-        ipsi = scalar_multiply(1j, psi) / numpy.sqrt(self.inner(psi, psi))
+        ipsi = scalar_multiply(1j, psi) / np.sqrt(self.inner(psi, psi))
         # normalize eigenvectors
-        eigvecs[:, 0] /= numpy.sqrt(self.inner(eigvecs[:, 0], eigvecs[:, 0]))
-        eigvecs[:, 1] /= numpy.sqrt(self.inner(eigvecs[:, 1], eigvecs[:, 1]))
+        eigvecs[:, 0] /= np.sqrt(self.inner(eigvecs[:, 0], eigvecs[:, 0]))
+        eigvecs[:, 1] /= np.sqrt(self.inner(eigvecs[:, 1], eigvecs[:, 1]))
         ev0 = self.inner(eigvecs[:, 0], ipsi)
         ev1 = self.inner(eigvecs[:, 1], ipsi)
 
-        if numpy.all(numpy.abs(eigvals) < 1.0e-10):
+        if np.all(np.abs(eigvals) < 1.0e-10):
             # If all eigenvalues are (close to) 0, the eigenvectors are a base of a
             # 2-dimensional subspace. None of the base vectors necessarily i*psi that
             # needs to be filtered out. For this reason, take the one that is closest to
@@ -293,18 +293,18 @@ def test_self_adjointness():
     n = 10
     points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
     # add column with zeros for magnetic potential
-    points = numpy.column_stack([points, numpy.zeros(points.shape[0])])
+    points = np.column_stack([points, np.zeros(points.shape[0])])
 
     mesh = meshplex.MeshTri(points, cells)
 
     problem = GinzburgLandauReal(mesh)
     n = problem.mesh.control_volumes.shape[0]
-    psi = numpy.random.rand(2 * n)
+    psi = np.random.rand(2 * n)
     jac = problem.jacobian(psi, 0.1)
 
     for _ in range(1000):
-        u = numpy.random.rand(2 * n)
-        v = numpy.random.rand(2 * n)
+        u = np.random.rand(2 * n)
+        v = np.random.rand(2 * n)
         a0 = problem.inner(u, jac * v)
         a1 = problem.inner(jac * u, v)
         assert abs(a0 - a1) < 1.0e-12
@@ -317,7 +317,7 @@ def test_f():
     n = 10
     points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
     # add column with zeros for magnetic potential
-    points = numpy.column_stack([points, numpy.zeros(points.shape[0])])
+    points = np.column_stack([points, np.zeros(points.shape[0])])
 
     mesh = meshplex.MeshTri(points, cells)
 
@@ -326,14 +326,14 @@ def test_f():
 
     n = points.shape[0]
 
-    numpy.random.seed(123)
+    np.random.seed(123)
 
     for _ in range(10):
-        psi = numpy.random.rand(n) + 1j * numpy.random.rand(n)
-        mu = numpy.random.rand(1)[0]
+        psi = np.random.rand(n) + 1j * np.random.rand(n)
+        mu = np.random.rand(1)[0]
         out = gl.f(psi, mu) * mesh.control_volumes
         out2 = glr.f(to_real(psi), mu)
-        assert numpy.all(numpy.abs(out - to_complex(out2)) < 1.0e-12)
+        assert np.all(np.abs(out - to_complex(out2)) < 1.0e-12)
 
 
 def test_df_dlmbda():
@@ -343,7 +343,7 @@ def test_df_dlmbda():
     n = 10
     points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
     # add column with zeros for magnetic potential
-    points = numpy.column_stack([points, numpy.zeros(points.shape[0])])
+    points = np.column_stack([points, np.zeros(points.shape[0])])
 
     mesh = meshplex.MeshTri(points, cells)
 
@@ -352,14 +352,14 @@ def test_df_dlmbda():
 
     n = points.shape[0]
 
-    numpy.random.seed(123)
+    np.random.seed(123)
 
     for _ in range(10):
-        psi = numpy.random.rand(n) + 1j * numpy.random.rand(n)
-        mu = numpy.random.rand(1)[0]
+        psi = np.random.rand(n) + 1j * np.random.rand(n)
+        mu = np.random.rand(1)[0]
         out = gl.df_dlmbda(psi, mu) * mesh.control_volumes
         out2 = glr.df_dlmbda(to_real(psi), mu)
-        assert numpy.all(numpy.abs(out - to_complex(out2)) < 1.0e-12)
+        assert np.all(np.abs(out - to_complex(out2)) < 1.0e-12)
 
 
 def test_jacobian():
@@ -369,7 +369,7 @@ def test_jacobian():
     n = 10
     points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
     # add column with zeros for magnetic potential
-    points = numpy.column_stack([points, numpy.zeros(points.shape[0])])
+    points = np.column_stack([points, np.zeros(points.shape[0])])
 
     mesh = meshplex.MeshTri(points, cells)
 
@@ -378,18 +378,18 @@ def test_jacobian():
 
     n = points.shape[0]
 
-    numpy.random.seed(123)
+    np.random.seed(123)
 
     for _ in range(10):
-        psi = numpy.random.rand(n) + 1j * numpy.random.rand(n)
-        mu = numpy.random.rand(1)[0]
+        psi = np.random.rand(n) + 1j * np.random.rand(n)
+        mu = np.random.rand(1)[0]
         jac0 = gl.jacobian(psi, mu)
         jac1 = glr.jacobian(to_real(psi), mu)
         for _ in range(10):
-            phi = numpy.random.rand(n) + 1j * numpy.random.rand(n)
+            phi = np.random.rand(n) + 1j * np.random.rand(n)
             out0 = (jac0 * phi) * mesh.control_volumes
             out1 = to_complex(jac1 * to_real(phi))
-            assert numpy.all(numpy.abs(out0 - out1) < 1.0e-12)
+            assert np.all(np.abs(out0 - out1) < 1.0e-12)
 
 
 def test_continuation(max_steps=5):
@@ -397,13 +397,13 @@ def test_continuation(max_steps=5):
     n = 20
     points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
     # add column with zeros for magnetic potential
-    points = numpy.column_stack([points, numpy.zeros(points.shape[0])])
+    points = np.column_stack([points, np.zeros(points.shape[0])])
 
     mesh = meshplex.MeshTri(points, cells)
 
     problem = GinzburgLandauReal(mesh)
     num_unknowns = 2 * problem.mesh.control_volumes.shape[0]
-    u0 = numpy.ones(num_unknowns)
+    u0 = np.ones(num_unknowns)
     u0[1::2] = 0.0
     mu0 = 0.0
 
@@ -429,7 +429,7 @@ def test_continuation(max_steps=5):
         def callback(k, mu, sol):
             mu_list.append(mu)
             # Store the solution
-            psi = numpy.array([sol[0::2], sol[1::2]]).T
+            psi = np.array([sol[0::2], sol[1::2]]).T
             writer.write_data(k, point_data={"psi": psi})
             with open("data.yml", "w") as fh:
                 yaml.dump({"filename": filename, "mu": [float(m) for m in mu_list]}, fh)

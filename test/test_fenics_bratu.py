@@ -99,8 +99,8 @@ def test_bratu_fenics(max_steps=10):
         ax.set_xlim(0.0, 10.0)
         ax.set_ylim(0.0, 6.0)
 
-        # import numpy
-        # ax.plot([lmbda_pre], [numpy.sqrt(problem.inner(u_pre, u_pre))], ".", color="C1")
+        # import numpy as np
+        # ax.plot([lmbda_pre], [np.sqrt(problem.inner(u_pre, u_pre))], ".", color="C1")
 
         fig.canvas.draw()
         fig.canvas.flush_events()

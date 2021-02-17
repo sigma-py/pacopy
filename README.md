@@ -37,7 +37,7 @@ class Bratu1d:
         self.n = 51
         h = 1.0 / (self.n - 1)
 
-        self.H = numpy.full(self.n, h)
+        self.H = np.full(self.n, h)
         self.H[0] = h / 2
         self.H[-1] = h / 2
 
@@ -47,18 +47,18 @@ class Bratu1d:
         )
 
     def inner(self, a, b):
-        """The inner product of the problem. Can be numpy.dot(a, b), but factoring in
+        """The inner product of the problem. Can be np.dot(a, b), but factoring in
         the mesh width stays true to the PDE.
         """
-        return numpy.dot(a, self.H * b)
+        return np.dot(a, self.H * b)
 
     def norm2_r(self, a):
         """The norm in the range space; used to determine if a solution has been found."""
-        return numpy.dot(a, a)
+        return np.dot(a, a)
 
     def f(self, u, lmbda):
         """The evaluation of the function to be solved"""
-        out = self.A.dot(u) - lmbda * numpy.exp(u)
+        out = self.A.dot(u) - lmbda * np.exp(u)
         out[0] = u[0]
         out[-1] = u[-1]
         return out
@@ -67,7 +67,7 @@ class Bratu1d:
         """The function's derivative with respect to the parameter. Used in Euler-Newton
         continuation.
         """
-        out = -numpy.exp(u)
+        out = -np.exp(u)
         out[0] = 0.0
         out[-1] = 0.0
         return out
@@ -76,7 +76,7 @@ class Bratu1d:
         """A solver for the Jacobian problem."""
         M = self.A.copy()
         d = M.diagonal().copy()
-        d -= lmbda * numpy.exp(u)
+        d -= lmbda * np.exp(u)
         M.setdiag(d)
         # Dirichlet conditions
         M.data[0][self.n - 2] = 0.0
@@ -90,7 +90,7 @@ continuation:
 ```python
 problem = Bratu1d()
 # Initial guess
-u0 = numpy.zeros(problem.n)
+u0 = np.zeros(problem.n)
 # Initial parameter value
 lmbda0 = 0.0
 
@@ -107,7 +107,7 @@ def callback(k, lmbda, sol):
     ax1.grid()
 
     lmbda_list.append(lmbda)
-    values_list.append(numpy.sqrt(problem.inner(sol, sol)))
+    values_list.append(np.sqrt(problem.inner(sol, sol)))
 
     ax1.plot(lmbda_list, values_list, "-x", color="#1f77f4")
     ax1.set_xlim(0.0, 4.0)

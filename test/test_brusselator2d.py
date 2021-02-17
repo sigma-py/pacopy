@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import meshio
 import meshplex
 import meshzoo
-import numpy
+import numpy as np
 import pyfvm
 import pytest
 import scipy.sparse
@@ -40,8 +40,8 @@ class Brusselator2d:
         # k = 1
         # ka = 4.5
         # DD = 8
-        # nu = numpy.sqrt(1 / DD)
-        # kbcrit = numpy.sqrt(1 + ka * nu)
+        # nu = np.sqrt(1 / DD)
+        # kbcrit = np.sqrt(1 + ka * nu)
 
         self.a = 4.0
         self.d1 = 1.0
@@ -52,12 +52,12 @@ class Brusselator2d:
         ux, vx = x
         uy, vy = y
         cv = self.mesh.control_volumes
-        return numpy.dot(ux, cv * uy) + numpy.dot(vx, cv * vy)
+        return np.dot(ux, cv * uy) + np.dot(vx, cv * vy)
 
     def norm2_r(self, q):
         """Squared norm in the range space (residuals and such)."""
         u, v = q
-        return numpy.dot(u, u) + numpy.dot(v, v)
+        return np.dot(u, u) + np.dot(v, v)
 
     def f(self, x, b):
         u, v = x
@@ -67,7 +67,7 @@ class Brusselator2d:
         i = self.mesh.is_boundary_node
         q[i] = u[i] - self.a
         r[i] = v[i] - b / self.a
-        return numpy.array([q, r])
+        return np.array([q, r])
 
     def df_dlmbda(self, x, b):
         u, v = x
@@ -77,7 +77,7 @@ class Brusselator2d:
         i = self.mesh.is_boundary_node
         q[i] = 0.0
         r[i] = -1.0 / self.a
-        return numpy.array([q, r])
+        return np.array([q, r])
 
     def jacobian_solver(self, x, b, rhs):
         u, v = x
@@ -95,7 +95,7 @@ class Brusselator2d:
         diag = A11.diagonal()
         diag += -(b + 1) + 2 * u * v
         A11.setdiag(diag)
-        set_dirichlet_rows(A11, numpy.where(ib)[0])
+        set_dirichlet_rows(A11, np.where(ib)[0])
 
         diag = u ** 2
         diag[ib] = 0.0
@@ -109,26 +109,26 @@ class Brusselator2d:
         diag = A22.diagonal()
         diag -= u ** 2
         A22.setdiag(diag)
-        set_dirichlet_rows(A22, numpy.where(ib)[0])
+        set_dirichlet_rows(A22, np.where(ib)[0])
 
         J = scipy.sparse.vstack(
             [scipy.sparse.hstack([A11, A12]), scipy.sparse.hstack([A21, A22])]
         )
 
-        rhs = numpy.concatenate(rhs)
+        rhs = np.concatenate(rhs)
         sol = scipy.sparse.linalg.spsolve(J.tocsr(), rhs)
 
         n = u.shape[0]
         u_sol = sol[:n]
         v_sol = sol[n:]
-        return numpy.array([u_sol, v_sol])
+        return np.array([u_sol, v_sol])
 
 
 @pytest.mark.skip(reason="currently failing")
 def test_brusselator2d():
     problem = Brusselator2d()
     n = problem.mesh.control_volumes.shape[0]
-    u0 = numpy.zeros((2, n))
+    u0 = np.zeros((2, n))
     b0 = 0.0
 
     plt.ion()
@@ -144,7 +144,7 @@ def test_brusselator2d():
     def callback(k, b, sol):
         b_list.append(b)
         line1.set_xdata(b_list)
-        values_list.append(numpy.max(numpy.abs(sol)))
+        values_list.append(np.max(np.abs(sol)))
         line1.set_ydata(values_list)
         ax.set_xlim(0.0, 200.0)
         ax.set_ylim(0.0, 40.0)
