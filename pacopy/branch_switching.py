@@ -44,13 +44,13 @@ def branch_switching(
     print(eigvec)
 
     import meshio
-    import numpy
+    import numpy as np
 
     filename = "ev.xdmf"
     with meshio.xdmf.TimeSeriesWriter(filename) as writer:
         writer.write_points_cells(
             problem.mesh.points, {"triangle": problem.mesh.cells["points"]}
         )
-        psi = numpy.array([eigvec[0::2], eigvec[1::2]]).T
+        psi = np.array([eigvec[0::2], eigvec[1::2]]).T
         writer.write_data(0, point_data={"psi": psi})
     exit(1)

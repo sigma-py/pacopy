@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import meshio
 import meshplex
 import meshzoo
-import numpy
+import numpy as np
 import pyfvm
 import pykry
 import pytest
@@ -35,31 +35,31 @@ class GrossPitaevskii:
 
     def __init__(self):
         a = 24.0
-        points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, 50, 50)
+        points, cells = meshzoo.rectangle_tri((-a / 2, -a / 2), (a / 2, a / 2), 50)
         self.mesh = meshplex.MeshTri(points, cells)
 
         x, y, z = self.mesh.points.T
-        assert numpy.all(numpy.abs(z) < 1.0e-15)
+        assert np.all(np.abs(z) < 1.0e-15)
 
         self.omega = 0.2
         self.V = 0.5 * self.omega ** 2 * (x ** 2 + y ** 2)
 
         # For the preconditioner
-        assert numpy.all(self.V >= 0)
+        assert np.all(self.V >= 0)
 
         self.A, _ = pyfvm.discretize_linear(Poisson(), self.mesh)
 
     def inner(self, x, y):
-        return numpy.real(numpy.dot(x.conj(), self.mesh.control_volumes * y))
+        return np.real(np.dot(x.conj(), self.mesh.control_volumes * y))
 
     def norm2_r(self, q):
-        return numpy.real(numpy.dot(q.conj(), q))
+        return np.real(np.dot(q.conj(), q))
 
     def f(self, psi, mu):
         out = (
             (0.5 * self.A * psi) / self.mesh.control_volumes
             + (self.V - mu) * psi
-            + numpy.abs(psi) ** 2 * psi
+            + np.abs(psi) ** 2 * psi
         )
         # Dirichlet conditions on the boundary
         # out[self.mesh.is_boundary_node] = psi[self.mesh.is_boundary_node]
@@ -118,7 +118,7 @@ class GrossPitaevskii:
 def test_gross_pitaevskii():
     problem = GrossPitaevskii()
     n = problem.mesh.control_volumes.shape[0]
-    u0 = numpy.zeros(n, dtype=complex)
+    u0 = np.zeros(n, dtype=complex)
     x, y, z = problem.mesh.points.T
     # In the N->0 limit, we can decompose the modes in Cartesian form [7] as being
     # proportional to
@@ -127,7 +127,7 @@ def test_gross_pitaevskii():
     #
     # where H_m are Hermite polynomials. These linear eigenfunctions have corresponding
     # eigenvalues mu = (m + n + 1) omega.
-    u0 = numpy.exp(-problem.omega * (x ** 2 + y ** 2) / 2).astype(complex)
+    u0 = np.exp(-problem.omega * (x ** 2 + y ** 2) / 2).astype(complex)
     mu0 = problem.omega
 
     plt.ion()
@@ -140,12 +140,12 @@ def test_gross_pitaevskii():
     values_list = []
     (line1,) = ax.plot(b_list, values_list, "-", color="#1f77f4")
 
-    area = numpy.sum(problem.mesh.control_volumes)
+    area = np.sum(problem.mesh.control_volumes)
 
     def callback(k, b, sol):
         b_list.append(b)
         line1.set_xdata(b_list)
-        values_list.append(numpy.sqrt(problem.inner(sol, sol)) / area)
+        values_list.append(np.sqrt(problem.inner(sol, sol)) / area)
         line1.set_ydata(values_list)
         ax.set_xlim(0.0, 100.0)
         ax.set_ylim(0.0, 1.0)
@@ -156,7 +156,7 @@ def test_gross_pitaevskii():
             f"sol{k:03d}.vtk",
             problem.mesh.points,
             {"triangle": problem.mesh.cells["points"]},
-            point_data={"psi": numpy.array([numpy.real(sol), numpy.imag(sol)]).T},
+            point_data={"psi": np.array([np.real(sol), np.imag(sol)]).T},
         )
 
     # pacopy.natural(problem, u0, mu0, callback, max_newton_steps=10)

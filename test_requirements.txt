@@ -1,9 +1,0 @@
-pyfvm
-matplotlib
-pykry
-meshzoo
-scipy
-meshio[all]
-numpy
-meshplex
-cplot

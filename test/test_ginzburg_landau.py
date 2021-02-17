@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import meshio
 import meshplex
 import meshzoo
-import numpy
+import numpy as np
 import pyfvm
 import pykry
 import yaml
@@ -17,7 +17,7 @@ class Energy:
     """Specification of the kinetic energy operator."""
 
     def __init__(self, mu):
-        self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
+        self.magnetic_field = mu * np.array([0.0, 0.0, 1.0])
         self.subdomains = [None]
 
     def eval(self, mesh, cell_mask):
@@ -29,15 +29,15 @@ class Energy:
         edge_ce_ratio = mesh.ce_ratios[..., cell_mask]
 
         # project the magnetic potential on the edge at the midpoint
-        magnetic_potential = 0.5 * numpy.cross(self.magnetic_field, edge_midpoint)
+        magnetic_potential = 0.5 * np.cross(self.magnetic_field, edge_midpoint)
         # The dot product <magnetic_potential, edge>, executed for many
         # points at once; cf. <http://stackoverflow.com/a/26168677/353337>.
-        beta = numpy.einsum("...k,...k->...", magnetic_potential, edge)
+        beta = np.einsum("...k,...k->...", magnetic_potential, edge)
 
-        return numpy.array(
+        return np.array(
             [
-                [edge_ce_ratio, -edge_ce_ratio * numpy.exp(-1j * beta)],
-                [-edge_ce_ratio * numpy.exp(1j * beta), edge_ce_ratio],
+                [edge_ce_ratio, -edge_ce_ratio * np.exp(-1j * beta)],
+                [-edge_ce_ratio * np.exp(1j * beta), edge_ce_ratio],
             ]
         )
 
@@ -46,8 +46,8 @@ class EnergyPrime:
     """Derivative by mu."""
 
     def __init__(self, mu):
-        self.magnetic_field = mu * numpy.array([0.0, 0.0, 1.0])
-        self.dmagnetic_field_dmu = numpy.array([0.0, 0.0, 1.0])
+        self.magnetic_field = mu * np.array([0.0, 0.0, 1.0])
+        self.dmagnetic_field_dmu = np.array([0.0, 0.0, 1.0])
         self.subdomains = [None]
 
     def eval(self, mesh, cell_mask):
@@ -59,22 +59,22 @@ class EnergyPrime:
         edge_ce_ratio = mesh.ce_ratios[..., cell_mask]
 
         # project the magnetic potential on the edge at the midpoint
-        magnetic_potential = 0.5 * numpy.cross(self.magnetic_field, edge_midpoint)
+        magnetic_potential = 0.5 * np.cross(self.magnetic_field, edge_midpoint)
         # <m, edge>
-        beta = numpy.einsum("...k,...k->...", magnetic_potential, edge)
+        beta = np.einsum("...k,...k->...", magnetic_potential, edge)
 
         # project the magnetic potential on the edge at the midpoint
-        dmagnetic_potential_dmu = 0.5 * numpy.cross(
+        dmagnetic_potential_dmu = 0.5 * np.cross(
             self.dmagnetic_field_dmu, edge_midpoint
         )
         # <m, edge>
-        dbeta_dmu = numpy.einsum("...k,...k->...", dmagnetic_potential_dmu, edge)
+        dbeta_dmu = np.einsum("...k,...k->...", dmagnetic_potential_dmu, edge)
 
-        zero = numpy.zeros(edge_ce_ratio.shape, dtype=complex)
-        return numpy.array(
+        zero = np.zeros(edge_ce_ratio.shape, dtype=complex)
+        return np.array(
             [
-                [zero, 1j * dbeta_dmu * edge_ce_ratio * numpy.exp(-1j * beta)],
-                [-1j * dbeta_dmu * edge_ce_ratio * numpy.exp(1j * beta), zero],
+                [zero, 1j * dbeta_dmu * edge_ce_ratio * np.exp(-1j * beta)],
+                [-1j * dbeta_dmu * edge_ce_ratio * np.exp(1j * beta), zero],
             ]
         )
 
@@ -87,15 +87,15 @@ class GinzburgLandau:
 
     def inner(self, x, y):
         """This is the special Ginzburg-Landau inner product. *bling bling*"""
-        return numpy.real(numpy.dot(x.conj(), self.mesh.control_volumes * y))
+        return np.real(np.dot(x.conj(), self.mesh.control_volumes * y))
 
     def norm2_r(self, q):
-        return numpy.real(numpy.dot(q.conj(), q))
+        return np.real(np.dot(q.conj(), q))
 
     def f(self, psi, mu):
         keo = pyfvm.get_fvm_matrix(self.mesh, edge_kernels=[Energy(mu)])
         cv = self.mesh.control_volumes
-        out = (keo * psi) / cv + (self.V + self.g * numpy.abs(psi) ** 2) * psi
+        out = (keo * psi) / cv + (self.V + self.g * np.abs(psi) ** 2) * psi
         # Algebraically, The inner product of <f(psi), i*psi> is always 0. We project
         # out that component numerically to avoid convergence failure for the Jacobian
         # updates close to a solution. If this is not done, the Krylov method might hang
@@ -171,7 +171,7 @@ class GinzburgLandau:
         # print("Krylov iterations:", out.iter)
         # print("Krylov residual:", out.resnorms[-1])
         # res = jac * out.xk - rhs
-        # print("Krylov residual (explicit):", numpy.sqrt(self.norm2_r(res)))
+        # print("Krylov residual (explicit):", np.sqrt(self.norm2_r(res)))
 
         # self.ax1.semilogy(out.resnorms)
         # self.ax1.grid()
@@ -195,7 +195,7 @@ class GinzburgLandau:
         # TODO show this for df/dlmbda as well
         # i_psi = 1j * psi
         # out.xk -= self.inner(i_psi, out.xk) / self.inner(i_psi, i_psi) * i_psi
-        # print("solution component i*psi", self.inner(i_psi, out.xk) / numpy.sqrt(self.inner(i_psi, i_psi)))
+        # print("solution component i*psi", self.inner(i_psi, out.xk) / np.sqrt(self.inner(i_psi, i_psi)))
         return out.xk
 
     def jacobian_eigenvalues(self, psi, mu):
@@ -205,19 +205,19 @@ class GinzburgLandau:
 
 
 # def test_self_adjointness():
-#     points, cells = meshzoo.rectangle(-5.0, 5.0, -5.0, 5.0, 30, 30)
+#     points, cells = meshzoo.rectangle_tri((-5.0, 5.0), (5.0, 5.0), 30)
 #     mesh = meshplex.MeshTri(points, cells)
 #
 #     problem = GinzburgLandau(mesh)
 #     n = problem.mesh.control_volumes.shape[0]
-#     numpy.random.seed(0)
+#     np.random.seed(0)
 #
 #     for _ in range(100):
-#         mu = numpy.random.rand(1)
-#         psi = numpy.random.rand(n) + 1j * numpy.random.rand(n)
+#         mu = np.random.rand(1)
+#         psi = np.random.rand(n) + 1j * np.random.rand(n)
 #         jac = problem.jacobian(psi, mu)
-#         u = numpy.random.rand(n) + 1j * numpy.random.rand(n)
-#         v = numpy.random.rand(n) + 1j * numpy.random.rand(n)
+#         u = np.random.rand(n) + 1j * np.random.rand(n)
+#         v = np.random.rand(n) + 1j * np.random.rand(n)
 #         a0 = problem.inner(u, jac * v)
 #         a1 = problem.inner(jac * u, v)
 #         assert abs(a0 - a1) < 1.0e-12
@@ -225,58 +225,58 @@ class GinzburgLandau:
 
 def test_f_i_psi():
     """Assert that <f(psi), i psi> == 0."""
-    points, cells = meshzoo.rectangle(-5.0, 5.0, -5.0, 5.0, 30, 30)
+    points, cells = meshzoo.rectangle_tri((-5.0, -5.0), (5.0, 5.0), 30)
     # add column with zeros for magnetic potential
-    points = numpy.column_stack([points, numpy.zeros(points.shape[0])])
+    points = np.column_stack([points, np.zeros(points.shape[0])])
 
     mesh = meshplex.MeshTri(points, cells)
 
     problem = GinzburgLandau(mesh)
     n = problem.mesh.control_volumes.shape[0]
 
-    numpy.random.seed(0)
+    np.random.seed(0)
 
     for _ in range(100):
-        mu = numpy.random.rand(1)
-        psi = numpy.random.rand(n) + 1j * numpy.random.rand(n)
+        mu = np.random.rand(1)
+        psi = np.random.rand(n) + 1j * np.random.rand(n)
         f = problem.f(psi, mu)
         assert abs(problem.inner(1j * psi, f)) < 1.0e-13
 
 
 def test_df_dlmbda():
-    points, cells = meshzoo.rectangle(-5.0, 5.0, -5.0, 5.0, 30, 30)
+    points, cells = meshzoo.rectangle_tri((-5.0, -5.0), (5.0, 5.0), 30)
     # add column with zeros for magnetic potential
-    points = numpy.column_stack([points, numpy.zeros(points.shape[0])])
+    points = np.column_stack([points, np.zeros(points.shape[0])])
 
     mesh = meshplex.MeshTri(points, cells)
 
     problem = GinzburgLandau(mesh)
     n = problem.mesh.control_volumes.shape[0]
-    numpy.random.seed(0)
+    np.random.seed(0)
 
     for _ in range(100):
-        mu = numpy.random.rand(1)
-        psi = numpy.random.rand(n) + 1j * numpy.random.rand(n)
+        mu = np.random.rand(1)
+        psi = np.random.rand(n) + 1j * np.random.rand(n)
         out = problem.df_dlmbda(psi, mu)
 
         # finite difference
         eps = 1.0e-5
         diff = (problem.f(psi, mu + eps) - problem.f(psi, mu - eps)) / (2 * eps)
-        nrm = numpy.dot((out - diff).conj(), out - diff).real
+        nrm = np.dot((out - diff).conj(), out - diff).real
         assert nrm < 1.0e-12
 
 
 def test_ginzburg_landau(max_steps=5, n=20):
     a = 10.0
-    points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, n, n)
+    points, cells = meshzoo.rectangle_tri((-a / 2, -a / 2), (a / 2, a / 2), n)
     # add column with zeros for magnetic potential
-    points = numpy.column_stack([points, numpy.zeros(points.shape[0])])
+    points = np.column_stack([points, np.zeros(points.shape[0])])
 
     mesh = meshplex.MeshTri(points, cells)
 
     problem = GinzburgLandau(mesh)
     n = problem.mesh.control_volumes.shape[0]
-    u0 = numpy.ones(n, dtype=complex)
+    u0 = np.ones(n, dtype=complex)
     mu0 = 0.0
 
     mu_list = []
@@ -290,7 +290,7 @@ def test_ginzburg_landau(max_steps=5, n=20):
         def callback(k, mu, sol):
             mu_list.append(mu)
             # Store the solution
-            psi = numpy.array([numpy.real(sol), numpy.imag(sol)]).T
+            psi = np.array([np.real(sol), np.imag(sol)]).T
             writer.write_data(k, point_data={"psi": psi})
             with open("data.yml", "w") as fh:
                 yaml.dump({"filename": filename, "mu": [float(m) for m in mu_list]}, fh)
@@ -330,8 +330,8 @@ def test_ginzburg_landau(max_steps=5, n=20):
 def gibbs_energy(mesh, psi):
     """Compute the Gibbs free energy. Useful for plotting purposes."""
     psi2 = psi ** 2
-    alpha = -numpy.real(numpy.dot(psi2.conj(), mesh.control_volumes * psi2))
-    return alpha / numpy.sum(mesh.control_volumes)
+    alpha = -np.real(np.dot(psi2.conj(), mesh.control_volumes * psi2))
+    return alpha / np.sum(mesh.control_volumes)
 
 
 def plot_data():
@@ -351,7 +351,7 @@ def plot_data():
         psi = point_data["psi"]
         psi = psi[:, 0] + 1j * psi[:, 1]
         energies.append(gibbs_energy(mesh, psi))
-    energies = numpy.array(energies)
+    energies = np.array(energies)
 
     for k in range(len(data["mu"])):
         plt.figure(figsize=(11, 4))
@@ -378,7 +378,7 @@ def plot_data():
         # hand, plots are rather more bright, resulting in more visually appealing
         # figures.
         cplot.tripcolor(triang, psi, abs_scaling=lambda r: r)
-        # plt.tripcolor(triang, numpy.abs(psi))
+        # plt.tripcolor(triang, np.abs(psi))
 
         ax2.axis("square")
         ax2.set_xlim(-5.0, 5.0)
