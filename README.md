@@ -1,13 +1,15 @@
 # pacopy
 
-[![CircleCI](https://img.shields.io/circleci/project/github/nschloe/pacopy/master.svg?style=flat-square)](https://circleci.com/gh/nschloe/pacopy/tree/master)
-[![codecov](https://img.shields.io/codecov/c/github/nschloe/pacopy.svg?style=flat-square)](https://codecov.io/gh/nschloe/pacopy)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
-[![Documentation Status](https://readthedocs.org/projects/pacopy/badge/?version=latest)](https://pacopy.readthedocs.org/en/latest/?badge=latest)
-[![PyPI pyversions](https://img.shields.io/pypi/pyversions/pacopy.svg?style=flat-square)](https://pypi.org/pypi/pacopy/)
 [![PyPi Version](https://img.shields.io/pypi/v/pacopy.svg?style=flat-square)](https://pypi.org/project/pacopy)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/pacopy.svg?style=flat-square)](https://pypi.org/pypi/pacopy/)
 [![GitHub stars](https://img.shields.io/github/stars/nschloe/pacopy.svg?style=flat-square&logo=github&label=Stars&logoColor=white)](https://github.com/nschloe/pacopy)
 [![PyPi downloads](https://img.shields.io/pypi/dm/pacopy.svg?style=flat-square)](https://pypistats.org/packages/pacopy)
+
+[![gh-actions](https://img.shields.io/github/workflow/status/nschloe/pacopy/ci?style=flat-square)](https://github.com/nschloe/pacopy/actions?query=workflow%3Aci)
+[![codecov](https://img.shields.io/codecov/c/github/nschloe/pacopy.svg?style=flat-square)](https://codecov.io/gh/nschloe/pacopy)
+[![LGTM](https://img.shields.io/lgtm/grade/python/github/nschloe/pacopy.svg?style=flat-square)](https://lgtm.com/projects/g/nschloe/pacopy)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
+
 
 pacopy provides various algorithms of [numerical parameter
 continuation](https://en.wikipedia.org/wiki/Numerical_continuation) for PDEs in Python.
