@@ -377,7 +377,7 @@ def _newton_corrector(
         )
         if problem.norm2_r(r) + q ** 2 < newton_tol ** 2:
             print(f"Newton corrector converged after {num_newton_steps} steps.")
-            print("lmbda = {}, <u, u> = {}".format(lmbda, problem.inner(u, u)))
+            print(f"lmbda = {lmbda}, <u, u> = {problem.inner(u, u)}")
             newton_success = True
             break
 
