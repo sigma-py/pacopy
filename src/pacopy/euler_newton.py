@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 import math
+from typing import Callable, Literal
 
 from .newton import NewtonConvergenceError, newton
+from .problem import Problem
 
 
 def tangent(u, lmbda):
@@ -29,24 +33,24 @@ def tangent(u, lmbda):
 
 
 def euler_newton(
-    problem,
+    problem: Problem,
     u0,
-    lmbda0,
-    callback,
-    max_steps=float("inf"),
-    verbose=True,
-    newton_tol=1.0e-12,
-    max_newton_steps=5,
-    predictor_variant="tangent",
-    corrector_variant="tangent",
+    lmbda0: float,
+    callback: Callable,
+    max_steps: float = float("inf"),
+    verbose: bool = True,
+    newton_tol: float = 1.0e-12,
+    max_newton_steps: int = 5,
+    predictor_variant: Literal["tangent"] | Literal["secant"] = "tangent",
+    corrector_variant: Literal["tangent"] | Literal["secant"] = "tangent",
     #
-    stepsize0=5.0e-1,
-    stepsize_max=float("inf"),
-    stepsize_aggressiveness=2,
-    cos_alpha_min=0.9,
-    theta0=1.0,
-    adaptive_theta=False,
-    converge_onto_zero_eigenvalue=False,
+    stepsize0: float = 5.0e-1,
+    stepsize_max: float = float("inf"),
+    stepsize_aggressiveness: int = 2,
+    cos_alpha_min: float = 0.9,
+    theta0: float = 1.0,
+    adaptive_theta: bool = False,
+    converge_onto_zero_eigenvalue: bool = False,
 ):
     """Pseudo-arclength continuation.
 
@@ -61,10 +65,10 @@ def euler_newton(
         u0: Initial guess
         lambda0: Initial parameter value
         callback: Callback function
-        max_steps (int): Maximum number of continuation steps
-        verbose (bool): Verbose output
-        newton_tol (float): Newton tolerance
-        max_newton_steps (int): Maxmimum number of Newton steps
+        max_steps: Maximum number of continuation steps
+        verbose: Verbose output
+        newton_tol: Newton tolerance
+        max_newton_steps: Maxmimum number of Newton steps
         predictor_variant (string): :code:`"tangent"` or :code:`"secant"`
         corrector_variant (string): :code:`"tangent"` or :code:`"secant"`
         stepsize0 (float): Initial step size
@@ -339,7 +343,7 @@ def euler_newton(
 def _newton_corrector(
     problem,
     u,
-    lmbda,
+    lmbda: float,
     theta,
     u_current,
     lmbda_current,
@@ -348,7 +352,7 @@ def _newton_corrector(
     ds,
     corrector_variant,
     max_newton_steps,
-    newton_tol,
+    newton_tol: float,
 ):
     # Newton corrector
     num_newton_steps = 0

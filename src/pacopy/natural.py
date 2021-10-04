@@ -1,19 +1,22 @@
+from typing import Callable
+
 from .newton import NewtonConvergenceError, newton
+from .problem import Problem
 
 
 def natural(
-    problem,
+    problem: Problem,
     u0,
-    lambda0,
-    callback,
-    lambda_stepsize0=1.0e-1,
-    lambda_stepsize_max=float("inf"),
-    lambda_stepsize_aggressiveness=2,
-    max_newton_steps=5,
-    newton_tol=1.0e-12,
-    max_steps=float("inf"),
-    verbose=True,
-    use_first_order_predictor=True,
+    lambda0: float,
+    callback: Callable,
+    lambda_stepsize0: float = 1.0e-1,
+    lambda_stepsize_max: float = float("inf"),
+    lambda_stepsize_aggressiveness: float = 2.0,
+    max_newton_steps: int = 5,
+    newton_tol: float = 1.0e-12,
+    max_steps: float = float("inf"),
+    verbose: bool = True,
+    use_first_order_predictor: bool = True,
     milestones=None,
 ):
     """Natural parameter continuation.
