@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.abspath("../"))
 # -- Project information -----------------------------------------------------
 
 project = "pacopy"
-copyright = "2018, Nico Schlömer"
+copyright = "2018-2021, Nico Schlömer"
 author = "Nico Schlömer"
 
 # The short X.Y version
@@ -42,6 +42,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.mathjax",
     "sphinx.ext.napoleon",
+    "sphinx_autodoc_typehints",
 ]
 
 # Add any paths that contain templates here, relative to this directory.

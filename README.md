@@ -12,7 +12,6 @@
 [![LGTM](https://img.shields.io/lgtm/grade/python/github/nschloe/pacopy.svg?style=flat-square)](https://lgtm.com/projects/g/nschloe/pacopy)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
 
-
 pacopy provides various algorithms of [numerical parameter
 continuation](https://en.wikipedia.org/wiki/Numerical_continuation) for ODEs and PDEs in
 Python.
@@ -27,14 +26,15 @@ methods, e.g., a function evaluation `f(u, lmbda)`, a Jacobian a solver
 Some pacopy documentation is available
 [here](https://pacopy.readthedocs.org/en/latest/?badge=latest).
 
-
 ### Examples
 
 #### Basic scalar example
+
 <img src="https://nschloe.github.io/pacopy/simple.svg" width="30%">
 
 Let's start off with a problem where the solution space is scalar. We try to solve
 `sin(x) - lambda` for different values of `lambda`, stating at 0.
+
 ```python
 import math
 import matplotlib.pyplot as plt
@@ -97,6 +97,7 @@ plt.show()
 ```
 
 #### Simple 2D problem
+
 <img src="https://nschloe.github.io/pacopy/simple2d.svg" width="30%">
 
 A similarly simple example with two unknowns and a parameter. The inner product and
@@ -175,6 +176,7 @@ problem](https://en.wikipedia.org/wiki/Liouville%E2%80%93Bratu%E2%80%93Gelfand_e
 in 1D with Dirichlet boundary conditions. Now, the solution space isn't scalar, but a
 vector of length `n` (the values of the solution at given points on the 1D interval).
 We now need numpy and scipy, the inner product and Jacobian solver are more complicated.
+
 ```python
 import matplotlib.pyplot as plt
 import numpy as np
@@ -270,7 +272,6 @@ def callback(k, lmbda, sol):
 pacopy.euler_newton(problem, u0, lmbda0, callback, max_steps=500, newton_tol=1.0e-10)
 ```
 
-
 #### Ginzburg–Landau
 
 ![ginzburg-landau](https://nschloe.github.io/pacopy/ginzburg-landau.gif)
@@ -284,14 +285,15 @@ shows parameter continuation in the strength of the magnetic field. The plot on 
 right-hand side shows the complex-valued solution using
 [cplot](https://github.com/nschloe/cplot).
 
-
 ### Installation
 
 pacopy is [available from the Python Package
 Index](https://pypi.org/project/pacopy/), so simply type
+
 ```
 pip install -U pacopy
 ```
+
 to install or upgrade.
 
 ### License

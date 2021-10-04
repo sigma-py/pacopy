@@ -1,11 +1,20 @@
 import math
+from typing import Callable
 
 
 class NewtonConvergenceError(Exception):
     pass
 
 
-def newton(f, jacobian_solver, norm2, u0, tol=1.0e-10, max_iter=20, verbose=True):
+def newton(
+    f: Callable,
+    jacobian_solver: Callable,
+    norm2: Callable,
+    u0,
+    tol: float = 1.0e-10,
+    max_iter: int = 20,
+    verbose: bool = True,
+):
     u = u0
 
     fu = f(u)
