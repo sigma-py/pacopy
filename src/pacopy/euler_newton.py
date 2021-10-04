@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import Callable, Literal
+from typing import Callable
 
 from .newton import NewtonConvergenceError, newton
 from .problem import Problem
@@ -41,8 +41,10 @@ def euler_newton(
     verbose: bool = True,
     newton_tol: float = 1.0e-12,
     max_newton_steps: int = 5,
-    predictor_variant: Literal["tangent"] | Literal["secant"] = "tangent",
-    corrector_variant: Literal["tangent"] | Literal["secant"] = "tangent",
+    predictor_variant: str = "tangent",
+    corrector_variant: str = "tangent",
+    # predictor_variant: Literal["tangent"] | Literal["secant"] = "tangent",
+    # corrector_variant: Literal["tangent"] | Literal["secant"] = "tangent",
     #
     stepsize0: float = 5.0e-1,
     stepsize_max: float = float("inf"),
