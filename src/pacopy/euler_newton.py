@@ -4,7 +4,6 @@ import math
 from typing import Callable
 
 from .newton import NewtonConvergenceError, newton
-from .problem import Problem
 
 
 def tangent(u, lmbda):
@@ -33,7 +32,7 @@ def tangent(u, lmbda):
 
 
 def euler_newton(
-    problem: Problem,
+    problem,
     u0,
     lmbda0: float,
     callback: Callable,

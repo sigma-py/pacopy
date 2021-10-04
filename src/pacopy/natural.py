@@ -1,11 +1,10 @@
 from typing import Callable
 
 from .newton import NewtonConvergenceError, newton
-from .problem import Problem
 
 
 def natural(
-    problem: Problem,
+    problem,
     u0,
     lambda0: float,
     callback: Callable,
