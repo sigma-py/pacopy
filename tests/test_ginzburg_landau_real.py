@@ -295,7 +295,7 @@ def test_self_adjointness():
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 
-    mesh = meshplex.MeshTri(points, cells)
+    mesh = meshplex.Mesh(points, cells)
 
     problem = GinzburgLandauReal(mesh)
     n = problem.mesh.control_volumes.shape[0]
@@ -319,7 +319,7 @@ def test_f():
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 
-    mesh = meshplex.MeshTri(points, cells)
+    mesh = meshplex.Mesh(points, cells)
 
     gl = GinzburgLandau(mesh)
     glr = GinzburgLandauReal(mesh)
@@ -345,7 +345,7 @@ def test_df_dlmbda():
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 
-    mesh = meshplex.MeshTri(points, cells)
+    mesh = meshplex.Mesh(points, cells)
 
     gl = GinzburgLandau(mesh)
     glr = GinzburgLandauReal(mesh)
@@ -371,7 +371,7 @@ def test_jacobian():
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 
-    mesh = meshplex.MeshTri(points, cells)
+    mesh = meshplex.Mesh(points, cells)
 
     gl = GinzburgLandau(mesh)
     glr = GinzburgLandauReal(mesh)
@@ -399,7 +399,7 @@ def test_continuation(max_steps=5):
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 
-    mesh = meshplex.MeshTri(points, cells)
+    mesh = meshplex.Mesh(points, cells)
 
     problem = GinzburgLandauReal(mesh)
     num_unknowns = 2 * problem.mesh.control_volumes.shape[0]

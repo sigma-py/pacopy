@@ -36,7 +36,7 @@ class GrossPitaevskii:
     def __init__(self):
         a = 24.0
         points, cells = meshzoo.rectangle_tri((-a / 2, -a / 2), (a / 2, a / 2), 50)
-        self.mesh = meshplex.MeshTri(points, cells)
+        self.mesh = meshplex.Mesh(points, cells)
 
         x, y, z = self.mesh.points.T
         assert np.all(np.abs(z) < 1.0e-15)

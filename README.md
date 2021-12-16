@@ -32,8 +32,8 @@ Some pacopy documentation is available
 
 <img src="https://nschloe.github.io/pacopy/simple.svg" width="30%">
 
-Let's start off with a problem where the solution space is scalar. We try to solve
-`sin(x) - lambda` for different values of `lambda`, stating at 0.
+Let's start off with a problem where the solution space is scalar. We try to
+solve `sin(x) - lambda` for different values of `lambda`, starting at 0.
 
 ```python
 import math

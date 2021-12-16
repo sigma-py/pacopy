@@ -168,7 +168,7 @@ class GinzburgLandau:
             # Minv=prec_inv(psi),
             # U=1j * psi,
         )
-        # print("Krylov iterations:", out.iter)
+        print(f"  GMRES: {out.iter} it, {out.resnorms[-1]:.3e} resnorm")
         # print("Krylov residual:", out.resnorms[-1])
         # res = jac * out.xk - rhs
         # print("Krylov residual (explicit):", np.sqrt(self.norm2_r(res)))
@@ -206,7 +206,7 @@ class GinzburgLandau:
 
 # def test_self_adjointness():
 #     points, cells = meshzoo.rectangle_tri((-5.0, 5.0), (5.0, 5.0), 30)
-#     mesh = meshplex.MeshTri(points, cells)
+#     mesh = meshplex.Mesh(points, cells)
 #
 #     problem = GinzburgLandau(mesh)
 #     n = problem.mesh.control_volumes.shape[0]
@@ -229,7 +229,7 @@ def test_f_i_psi():
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 
-    mesh = meshplex.MeshTri(points, cells)
+    mesh = meshplex.Mesh(points, cells)
 
     problem = GinzburgLandau(mesh)
     n = problem.mesh.control_volumes.shape[0]
@@ -248,7 +248,7 @@ def test_df_dlmbda():
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 
-    mesh = meshplex.MeshTri(points, cells)
+    mesh = meshplex.Mesh(points, cells)
 
     problem = GinzburgLandau(mesh)
     n = problem.mesh.control_volumes.shape[0]
@@ -270,9 +270,9 @@ def test_ginzburg_landau(max_steps=5, n=20):
     a = 10.0
     points, cells = meshzoo.rectangle_tri((-a / 2, -a / 2), (a / 2, a / 2), n)
     # add column with zeros for magnetic potential
-    points = np.column_stack([points, np.zeros(points.shape[0])])
+    points = np.column_stack([points, np.zeros_like(points[:, 0])])
 
-    mesh = meshplex.MeshTri(points, cells)
+    mesh = meshplex.Mesh(points, cells)
 
     problem = GinzburgLandau(mesh)
     n = problem.mesh.control_volumes.shape[0]
@@ -340,12 +340,14 @@ def plot_data():
         data = yaml.safe_load(fh)
 
     reader = meshio.xdmf.TimeSeriesReader(data["filename"])
-    points, cells = reader.read_points_cells()
+    points, cell_blocks = reader.read_points_cells()
     x, y, _ = points.T
+
+    triang = matplotlib.tri.Triangulation(x, y)
 
     # compute all energies in advance
     energies = []
-    mesh = meshplex.MeshTri(points, cells["triangle"])
+    mesh = meshplex.Mesh(points, cell_blocks[0].data)
     for k in range(len(data["mu"])):
         _, point_data, _ = reader.read_data(k)
         psi = point_data["psi"]
@@ -365,20 +367,20 @@ def plot_data():
         ax1.set_xlabel("$\\mu$")
         ax1.set_ylabel("$\\mathcal{E}(\\psi)$")
 
+        ax2 = plt.subplot(1, 2, 2)
         _, point_data, _ = reader.read_data(k)
         psi = point_data["psi"]
         psi = psi[:, 0] + 1j * psi[:, 1]
-
-        ax2 = plt.subplot(1, 2, 2)
-        triang = matplotlib.tri.Triangulation(x, y)
         # The absolute values of the solution psi of the Ginzburg-Landau equations all
         # sit between 0 and 1, so we don't need a fancy scaling of absolute values for
         # cplot. This results in the values with |psi|=1 being displayed as white,
         # however, losing visual information about the complex argument. On the other
         # hand, plots are rather more bright, resulting in more visually appealing
         # figures.
-        cplot.tripcolor(triang, psi, abs_scaling=lambda r: r)
+        # Choose the brightness to range linearly between 0.0, and 0.7.
+        cplot.tripcolor(triang, psi, abs_scaling=lambda z: 0.7 * z)
         # plt.tripcolor(triang, np.abs(psi))
+        cplot.tricontour_abs(triang, psi, np.linspace(0.0, 1.0, 6))
 
         ax2.axis("square")
         ax2.set_xlim(-5.0, 5.0)
@@ -398,5 +400,5 @@ if __name__ == "__main__":
     # test_self_adjointness()
     # test_f_i_psi()
     # test_df_dlmbda()
-    test_ginzburg_landau(max_steps=100, n=100)
-    # plot_data()
+    # test_ginzburg_landau(max_steps=100, n=100)
+    plot_data()

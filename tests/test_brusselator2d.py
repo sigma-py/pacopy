@@ -34,7 +34,7 @@ class Brusselator2d:
     def __init__(self):
         a = 20.0
         points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, 40, 40)
-        self.mesh = meshplex.MeshTri(points, cells)
+        self.mesh = meshplex.Mesh(points, cells)
         self.A, _ = pyfvm.get_fvm_matrix(self.mesh, [Poisson()])
 
         # k = 1
