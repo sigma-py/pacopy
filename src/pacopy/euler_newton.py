@@ -3,6 +3,9 @@ from __future__ import annotations
 import math
 from typing import Callable
 
+from rich.console import Console
+
+from .errors import JacobianSolverError
 from .newton import NewtonConvergenceError, newton
 
 
@@ -142,6 +145,8 @@ def euler_newton(
     """
     lmbda = lmbda0
 
+    console = Console()
+
     k = 0
     try:
         u, _ = newton(
@@ -153,7 +158,7 @@ def euler_newton(
             max_iter=max_newton_steps,
         )
     except NewtonConvergenceError as e:
-        print("No convergence for initial step.")
+        console.print("[red]No convergence for initial step.[/]")
         raise e
 
     if converge_onto_zero_eigenvalue:
@@ -196,31 +201,53 @@ def euler_newton(
             break
 
         if verbose:
-            print()
-            print(f"Step {k}, stepsize: {ds:.3e}")
+            uu = problem.inner(u_current, u_current)
+            console.print(
+                "\n[blue]"
+                + f"[bold]Step {k}[/bold]\n"
+                + f"lmbda = {lmbda_current:.3f}, <u, u> = {uu:.3f}, stepsize = {ds:.3e}"
+                + "[/blue]",
+                highlight=False,
+            )
 
         # Predictor
         u = u_current + du_ds_current * ds
         lmbda = lmbda_current + dlmbda_ds_current * ds
 
+        if verbose:
+            print("Corrector >")
         # Newton corrector
-        u, lmbda, num_newton_steps, newton_success = _newton_corrector(
-            problem,
-            u,
-            lmbda,
-            theta,
-            u_current,
-            lmbda_current,
-            du_ds_current,
-            dlmbda_ds_current,
-            ds,
-            corrector_variant,
-            max_newton_steps,
-            newton_tol,
-        )
+        try:
+            u, lmbda, num_newton_steps, newton_success = _newton_corrector(
+                problem,
+                u,
+                lmbda,
+                theta,
+                u_current,
+                lmbda_current,
+                du_ds_current,
+                dlmbda_ds_current,
+                ds,
+                corrector_variant,
+                max_newton_steps,
+                newton_tol,
+                verbose,
+            )
+        except JacobianSolverError:
+            if verbose:
+                console.print(
+                    "[red]Jacobian solver error![/]\n"
+                    + "[yellow]Restarting with smaller stepsize.[/]"
+                )
+            ds *= 0.5
+            continue
 
         if not newton_success:
-            print("Newton convergence failure! Restart with smaller step size.")
+            if verbose:
+                console.print(
+                    "[yellow]Newton convergence failure!"
+                    + "\nRestarting with smaller step size.[/]"
+                )
             ds *= 0.5
             continue
 
@@ -229,7 +256,8 @@ def euler_newton(
             is_zero = abs(eigval) < tol
 
             if is_zero:
-                print("Converged onto zero eigenvalue.")
+                if verbose:
+                    console.print("[green]Converged onto zero eigenvalue.[/]")
                 return eigval, eigvec
             else:
                 # Check if the eigenvalue crossed the origin
@@ -239,16 +267,32 @@ def euler_newton(
                     nonzero_eigval = eigval
                 else:
                     # crossed the origin!
-                    print("Eigenvalue crossed origin! Restart with smaller step size.")
+                    if verbose:
+                        console.print(
+                            "[yellow]Eigenvalue crossed origin!"
+                            + "\nRestarting with smaller step size.[/]"
+                        )
                     # order 1 approximation for the zero eigenvalue
                     ds *= nonzero_eigval / (nonzero_eigval - eigval)
                     continue
+
+        if verbose:
+            print("Next predictor >")
 
         # Approximate dlmbda/ds and du/ds for the next predictor step
         if predictor_variant == "tangent":
             # tangent predictor (like in natural continuation)
             #
-            du_dlmbda = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
+            try:
+                du_dlmbda = problem.jacobian_solver(
+                    u, lmbda, -problem.df_dlmbda(u, lmbda)
+                )
+            except JacobianSolverError:
+                if verbose:
+                    console.print(
+                        "[red]Jacobian solver error in tangent predictor! Abort.[/]"
+                    )
+                raise
             # Make sure the sign of dlambda_ds is correct
             r = theta ** 2 * problem.inner(du_dlmbda, u - u_current) + (
                 lmbda - lmbda_current
@@ -297,11 +341,13 @@ def euler_newton(
         # When removing the "+1"s, this is the expression that is used in LOCA (equation
         # (2.25) in the LOCA book).
         if cos_alpha < cos_alpha_min:
-            print(
-                "Angle between subsequent predictors too large "
-                f"(cos(alpha) = {cos_alpha} < {cos_alpha_min}). "
-                "Restart with smaller step size."
-            )
+            if verbose:
+                console.print(
+                    "[yellow]Angle between subsequent predictors too large "
+                    + f"(cos(alpha) = {cos_alpha:.3f} < {cos_alpha_min:.3f})."
+                    + "\nRestarting with smaller step size.[/]",
+                    highlight=False,
+                )
             ds *= 0.5
             continue
 
@@ -354,7 +400,10 @@ def _newton_corrector(
     corrector_variant: str,
     max_newton_steps: int,
     newton_tol: float,
+    verbose: bool,
 ):
+    console = Console()
+
     # Newton corrector
     num_newton_steps = 0
     newton_success = False
@@ -372,17 +421,22 @@ def _newton_corrector(
             q = (
                 theta ** 2 * problem.inner(u - u_current, u - u_current)
                 + (lmbda - lmbda_current) ** 2
+                # TODO square here? document this whole function better, we
+                # need equations!
                 - ds ** 2
             )
 
         norms2 = (problem.norm2_r(r), q ** 2)
-        print(
-            f"Newton norms: sqrt({norms2[0]:.3e} + {norms2[1]:.3e}) "
-            f"= {math.sqrt(norms2[0] + norms2[1]):.3e}"
-        )
+        if verbose:
+            print(
+                f"Newton norms: sqrt({norms2[0]:.3e} + {norms2[1]:.3e}) "
+                f"= {math.sqrt(norms2[0] + norms2[1]):.3e}"
+            )
         if norms2[0] + norms2[1] < newton_tol ** 2:
-            print(f"Newton corrector converged after {num_newton_steps} steps.")
-            print(f"lmbda = {lmbda}, <u, u> = {problem.inner(u, u)}")
+            if verbose:
+                console.print(
+                    f"[green]Newton corrector converged after {num_newton_steps} steps.[/]"
+                )
             newton_success = True
             break
 
@@ -401,16 +455,15 @@ def _newton_corrector(
             dlmbda = -(q + theta ** 2 * problem.inner(du_ds, z1)) / (
                 dlmbda_ds + theta ** 2 * problem.inner(du_ds, z2)
             )
-            du = z1 + dlmbda * z2
         else:
             assert corrector_variant == "secant"
             dlmbda = -(q + 2 * theta ** 2 * problem.inner(u - u_current, z1)) / (
                 2 * (lmbda - lmbda_current)
                 + 2 * theta ** 2 * problem.inner(u - u_current, z2)
             )
-            du = z1 + dlmbda * z2
 
-        u += du
+        # du = z1 + dlmbda * z2
+        u += z1 + dlmbda * z2
         lmbda += dlmbda
         num_newton_steps += 1
 

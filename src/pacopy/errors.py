@@ -1,0 +1,2 @@
+class JacobianSolverError(Exception):
+    pass
