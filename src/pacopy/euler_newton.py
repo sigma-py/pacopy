@@ -203,8 +203,10 @@ def euler_newton(
         if verbose:
             uu = problem.inner(u_current, u_current)
             console.print(
-                f"\n[blue][bold]Step {k}[/bold], stepsize: {ds:.3e}\n"
-                + f"lmbda = {lmbda_current}, <u, u> = {uu}[/blue]",
+                "\n[blue]"
+                + f"[bold]Step {k}[/bold]\n"
+                + f"lmbda = {lmbda_current:.3f}, <u, u> = {uu:.3f}, stepsize = {ds:.3e}"
+                + "[/blue]",
                 highlight=False,
             )
 
