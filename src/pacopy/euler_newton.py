@@ -236,7 +236,8 @@ def euler_newton(
         except JacobianSolverError:
             if verbose:
                 console.print(
-                    "[red]Jacobian solver error!\nRestarting with smaller stepsize.[/]"
+                    "[red]Jacobian solver error![/]\n"
+                    + "[yellow]Restarting with smaller stepsize.[/]"
                 )
             ds *= 0.5
             continue
@@ -420,6 +421,8 @@ def _newton_corrector(
             q = (
                 theta ** 2 * problem.inner(u - u_current, u - u_current)
                 + (lmbda - lmbda_current) ** 2
+                # TODO square here? document this whole function better, we
+                # need equations!
                 - ds ** 2
             )
 
@@ -452,16 +455,15 @@ def _newton_corrector(
             dlmbda = -(q + theta ** 2 * problem.inner(du_ds, z1)) / (
                 dlmbda_ds + theta ** 2 * problem.inner(du_ds, z2)
             )
-            du = z1 + dlmbda * z2
         else:
             assert corrector_variant == "secant"
             dlmbda = -(q + 2 * theta ** 2 * problem.inner(u - u_current, z1)) / (
                 2 * (lmbda - lmbda_current)
                 + 2 * theta ** 2 * problem.inner(u - u_current, z2)
             )
-            du = z1 + dlmbda * z2
 
-        u += du
+        # du = z1 + dlmbda * z2
+        u += z1 + dlmbda * z2
         lmbda += dlmbda
         num_newton_steps += 1
 
