@@ -34,7 +34,9 @@ def set_dirichlet_rows(matrix, idx):
 
 class AllenCahn:
     def __init__(self):
-        points, cells = meshzoo.rectangle_tri((0.0, 0.0), (1.0, 1.0), 30)
+        points, cells = meshzoo.rectangle_tri(
+            np.linspace(0.0, 1.0, 30), np.linspace(0.0, 1.0, 30)
+        )
         self.mesh = meshplex.Mesh(points, cells)
         # This matrix self.A is negative semidefinite
         self.A, _ = pyfvm.discretize_linear(Poisson(), self.mesh)

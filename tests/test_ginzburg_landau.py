@@ -1,4 +1,5 @@
 import cplot
+import krylov
 import matplotlib
 import matplotlib.pyplot as plt
 import meshio
@@ -6,9 +7,8 @@ import meshplex
 import meshzoo
 import numpy as np
 import pyfvm
-import pykry
 import yaml
-from scipy.sparse.linalg import spsolve
+from scipy.sparse.linalg import LinearOperator, spsolve
 
 import pacopy
 
@@ -21,7 +21,7 @@ class Energy:
         self.subdomains = [None]
 
     def eval(self, mesh, cell_mask):
-        nec = mesh.idx_hierarchy[..., cell_mask]
+        nec = mesh.idx[-1][..., cell_mask]
         X = mesh.points[nec]
 
         edge_midpoint = 0.5 * (X[0] + X[1])
@@ -51,7 +51,7 @@ class EnergyPrime:
         self.subdomains = [None]
 
     def eval(self, mesh, cell_mask):
-        nec = mesh.idx_hierarchy[..., cell_mask]
+        nec = mesh.idx[-1][..., cell_mask]
         X = mesh.points[nec]
 
         edge_midpoint = 0.5 * (X[0] + X[1])
@@ -123,11 +123,11 @@ class GinzburgLandau:
         beta = self.g * psi ** 2
 
         num_unknowns = len(self.mesh.points)
-        return pykry.LinearOperator(
+        return LinearOperator(
             (num_unknowns, num_unknowns),
-            complex,
-            dot=_apply_jacobian,
-            dot_adj=_apply_jacobian,
+            dtype=complex,
+            matvec=_apply_jacobian,
+            rmatvec=_apply_jacobian,
         )
 
     def jacobian_solver(self, psi, mu, rhs):
@@ -153,22 +153,25 @@ class GinzburgLandau:
                 return out
 
             num_unknowns = len(self.mesh.points)
-            return pykry.LinearOperator(
-                (num_unknowns, num_unknowns), complex, dot=_apply, dot_adj=_apply
+            return LinearOperator(
+                (num_unknowns, num_unknowns),
+                dtype=complex,
+                matvec=_apply,
+                rmatvec=_apply,
             )
 
         jac = self.jacobian(psi, mu)
-        out = pykry.gmres(
+        sol, info = krylov.gmres(
             A=jac,
             b=rhs,
             M=prec(psi),
-            inner_product=self.inner,
+            inner=self.inner,
             maxiter=100,
             tol=1.0e-12,
             # Minv=prec_inv(psi),
             # U=1j * psi,
         )
-        print(f"  GMRES: {out.iter} it, {out.resnorms[-1]:.3e} resnorm")
+        print(f"  GMRES: {info.numsteps} it, {info.resnorms[-1]:.3e} resnorm")
         # print("Krylov residual:", out.resnorms[-1])
         # res = jac * out.xk - rhs
         # print("Krylov residual (explicit):", np.sqrt(self.norm2_r(res)))
@@ -196,7 +199,7 @@ class GinzburgLandau:
         # i_psi = 1j * psi
         # out.xk -= self.inner(i_psi, out.xk) / self.inner(i_psi, i_psi) * i_psi
         # print("solution component i*psi", self.inner(i_psi, out.xk) / np.sqrt(self.inner(i_psi, i_psi)))
-        return out.xk
+        return sol
 
     def jacobian_eigenvalues(self, psi, mu):
         print("a")
@@ -225,7 +228,9 @@ class GinzburgLandau:
 
 def test_f_i_psi():
     """Assert that <f(psi), i psi> == 0."""
-    points, cells = meshzoo.rectangle_tri((-5.0, -5.0), (5.0, 5.0), 30)
+    points, cells = meshzoo.rectangle_tri(
+        np.linspace(-5.0, 5.0, 30), np.linspace(-5.0, 5.0, 30)
+    )
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 
@@ -244,7 +249,9 @@ def test_f_i_psi():
 
 
 def test_df_dlmbda():
-    points, cells = meshzoo.rectangle_tri((-5.0, -5.0), (5.0, 5.0), 30)
+    points, cells = meshzoo.rectangle_tri(
+        np.linspace(-5.0, 5.0, 30), np.linspace(-5.0, 5.0, 30)
+    )
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 
@@ -268,7 +275,9 @@ def test_df_dlmbda():
 
 def test_ginzburg_landau(max_steps=5, n=20):
     a = 10.0
-    points, cells = meshzoo.rectangle_tri((-a / 2, -a / 2), (a / 2, a / 2), n)
+    points, cells = meshzoo.rectangle_tri(
+        np.linspace(-a / 2, a / 2, n), np.linspace(-a / 2, a / 2, n)
+    )
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros_like(points[:, 0])])
 
@@ -284,7 +293,7 @@ def test_ginzburg_landau(max_steps=5, n=20):
     filename = "sol.xdmf"
     with meshio.xdmf.TimeSeriesWriter(filename) as writer:
         writer.write_points_cells(
-            problem.mesh.points, [("triangle", problem.mesh.cells["points"])]
+            problem.mesh.points, {"triangle": problem.mesh.cells("points")}
         )
 
         def callback(k, mu, sol):

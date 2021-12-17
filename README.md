@@ -23,6 +23,13 @@ other Python package. The only thing the user must provide is a class with some 
 methods, e.g., a function evaluation `f(u, lmbda)`, a Jacobian a solver
 `jacobian_solver(u, lmbda, rhs)` etc.
 
+Install with
+
+```
+pip install pacopy
+```
+To get started, take a look at the examples below.
+
 Some pacopy documentation is available
 [here](https://pacopy.readthedocs.org/en/latest/?badge=latest).
 
@@ -165,6 +172,7 @@ ax.set_ylabel("$u_2$")
 ax.set_zlabel("$\\lambda$")
 # plt.show()
 plt.savefig("simple2d.svg", transparent=True, bbox_inches="tight")
+plt.close()
 ```
 
 #### Bratu
@@ -264,6 +272,7 @@ def callback(k, lmbda, sol):
     ax1.plot(lmbda_list, values_list, "-x", color="C0")
     ax1.set_xlim(0.0, 4.0)
     ax1.set_ylim(0.0, 6.0)
+    plt.close()
 
 
 # Natural parameter continuation
@@ -285,17 +294,8 @@ shows parameter continuation in the strength of the magnetic field. The plot on 
 right-hand side shows the complex-valued solution using
 [cplot](https://github.com/nschloe/cplot).
 
-### Installation
-
-pacopy is [available from the Python Package
-Index](https://pypi.org/project/pacopy/), so simply type
-
-```
-pip install -U pacopy
-```
-
-to install or upgrade.
 
 ### License
 
-This software is published under the [GPLv3 license](https://www.gnu.org/licenses/gpl-3.0.en.html).
+This software is published under the [GPLv3
+license](https://www.gnu.org/licenses/gpl-3.0.en.html).
