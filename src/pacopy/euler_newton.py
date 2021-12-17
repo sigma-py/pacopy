@@ -147,7 +147,6 @@ def euler_newton(
 
     console = Console()
 
-    k = 0
     try:
         u, _ = newton(
             lambda u: problem.f(u, lmbda),
@@ -166,35 +165,13 @@ def euler_newton(
         tol = 1.0e-10
         nonzero_eigval, _ = problem.jacobian_eigenvalue(u, lmbda)
 
-    ds = abs(stepsize0)
-
-    theta = theta0
-
-    # tangent predictor for the first step
-    du_dlmbda = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
-    dlmbda_ds = 1.0 if stepsize0 > 0 else -1.0
-    du_ds = du_dlmbda * dlmbda_ds
-
-    duds2 = problem.inner(du_ds, du_ds)
-
-    # theta = math.sqrt(
-    #     (dlmbda_ds ** 2 / dlmbda_ds_target2) * (1 - dlmbda_ds_target2) / duds2
-    # )
-    # theta = min(theta, theta_max)
-    # theta = 1.0  # TODO remove
-    nrm = math.sqrt(theta ** 2 * duds2 + dlmbda_ds ** 2)
-    du_ds /= nrm
-    dlmbda_ds /= nrm
-    duds2 /= nrm ** 2
-
-    u_current = u
-    lmbda_current = lmbda
-    du_ds_current = du_ds
-    dlmbda_ds_current = dlmbda_ds
-    duds2_current = duds2
+    k = 0
 
     callback(k, lmbda, u)
     k += 1
+
+    ds = abs(stepsize0)
+    theta = theta0
 
     while True:
         if k > max_steps:
@@ -206,7 +183,31 @@ def euler_newton(
                 highlight=False,
             )
 
-        # Predictor
+        if k == 1:
+            # tangent predictor for the first step
+            du_dlmbda = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
+            dlmbda_ds = 1.0 if stepsize0 > 0 else -1.0
+            du_ds = du_dlmbda * dlmbda_ds
+
+            duds2 = problem.inner(du_ds, du_ds)
+
+            # theta = math.sqrt(
+            #     (dlmbda_ds ** 2 / dlmbda_ds_target2) * (1 - dlmbda_ds_target2) / duds2
+            # )
+            # theta = min(theta, theta_max)
+            # theta = 1.0  # TODO remove
+            nrm = math.sqrt(theta ** 2 * duds2 + dlmbda_ds ** 2)
+            du_ds /= nrm
+            dlmbda_ds /= nrm
+            duds2 /= nrm ** 2
+
+            u_current = u
+            lmbda_current = lmbda
+            du_ds_current = du_ds
+            dlmbda_ds_current = dlmbda_ds
+            duds2_current = duds2
+
+        # Actually perform predictor step
         u = u_current + du_ds_current * ds
         lmbda = lmbda_current + dlmbda_ds_current * ds
 
