@@ -172,6 +172,10 @@ class GinzburgLandau:
             # U=1j * psi,
         )
         print(f"  GMRES: {info.numsteps} it, {info.resnorms[-1]:.3e} resnorm")
+
+        if not info.success:
+            raise pacopy.LinearSolverError
+
         # print("Krylov residual:", out.resnorms[-1])
         # res = jac * out.xk - rhs
         # print("Krylov residual (explicit):", np.sqrt(self.norm2_r(res)))
@@ -409,5 +413,5 @@ if __name__ == "__main__":
     # test_self_adjointness()
     # test_f_i_psi()
     # test_df_dlmbda()
-    # test_ginzburg_landau(max_steps=100, n=100)
-    plot_data()
+    test_ginzburg_landau(max_steps=200, n=50)
+    # plot_data()
