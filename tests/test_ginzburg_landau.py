@@ -174,7 +174,7 @@ class GinzburgLandau:
         print(f"  GMRES: {info.numsteps} it, {info.resnorms[-1]:.3e} resnorm")
 
         if not info.success:
-            raise pacopy.LinearSolverError
+            raise pacopy.JacobianSolverError
 
         # print("Krylov residual:", out.resnorms[-1])
         # res = jac * out.xk - rhs
@@ -413,5 +413,5 @@ if __name__ == "__main__":
     # test_self_adjointness()
     # test_f_i_psi()
     # test_df_dlmbda()
-    test_ginzburg_landau(max_steps=200, n=50)
+    test_ginzburg_landau(max_steps=500, n=50)
     # plot_data()

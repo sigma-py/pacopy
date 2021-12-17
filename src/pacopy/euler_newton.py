@@ -5,7 +5,7 @@ from typing import Callable
 
 from rich.console import Console
 
-from .errors import LinearSolverError
+from .errors import JacobianSolverError
 from .newton import NewtonConvergenceError, newton
 
 
@@ -226,9 +226,9 @@ def euler_newton(
                 max_newton_steps,
                 newton_tol,
             )
-        except LinearSolverError:
+        except JacobianSolverError:
             console.print(
-                "[red]Linear solver error!\nRestarting with smaller stepsize.[/]"
+                "[red]Jacobian solver error!\nRestarting with smaller stepsize.[/]"
             )
             ds *= 0.5
             continue
@@ -272,9 +272,9 @@ def euler_newton(
                 du_dlmbda = problem.jacobian_solver(
                     u, lmbda, -problem.df_dlmbda(u, lmbda)
                 )
-            except LinearSolverError:
+            except JacobianSolverError:
                 console.print(
-                    "[red]Linear solver error in tangent predictor! Abort.[/]"
+                    "[red]Jacobian solver error in tangent predictor! Abort.[/]"
                 )
                 raise
             # Make sure the sign of dlambda_ds is correct

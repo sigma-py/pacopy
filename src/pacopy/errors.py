@@ -1,2 +1,2 @@
-class LinearSolverError(Exception):
+class JacobianSolverError(Exception):
     pass
