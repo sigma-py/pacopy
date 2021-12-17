@@ -201,8 +201,10 @@ def euler_newton(
             break
 
         if verbose:
+            uu = problem.inner(u_current, u_current)
             console.print(
-                f"\n[blue][bold]Step {k}[/bold], stepsize: {ds:.3e}[blue]",
+                f"\n[blue][bold]Step {k}[/bold], stepsize: {ds:.3e}\n"
+                + f"lmbda = {lmbda_current}, <u, u> = {uu}[/blue]",
                 highlight=False,
             )
 
@@ -210,6 +212,8 @@ def euler_newton(
         u = u_current + du_ds_current * ds
         lmbda = lmbda_current + dlmbda_ds_current * ds
 
+        if verbose:
+            print("Corrector >")
         # Newton corrector
         try:
             u, lmbda, num_newton_steps, newton_success = _newton_corrector(
@@ -225,19 +229,22 @@ def euler_newton(
                 corrector_variant,
                 max_newton_steps,
                 newton_tol,
+                verbose,
             )
         except JacobianSolverError:
-            console.print(
-                "[red]Jacobian solver error!\nRestarting with smaller stepsize.[/]"
-            )
+            if verbose:
+                console.print(
+                    "[red]Jacobian solver error!\nRestarting with smaller stepsize.[/]"
+                )
             ds *= 0.5
             continue
 
         if not newton_success:
-            console.print(
-                "[yellow]Newton convergence failure!"
-                + "\nRestarting with smaller step size.[/]"
-            )
+            if verbose:
+                console.print(
+                    "[yellow]Newton convergence failure!"
+                    + "\nRestarting with smaller step size.[/]"
+                )
             ds *= 0.5
             continue
 
@@ -246,7 +253,8 @@ def euler_newton(
             is_zero = abs(eigval) < tol
 
             if is_zero:
-                console.print("[green]Converged onto zero eigenvalue.[/]")
+                if verbose:
+                    console.print("[green]Converged onto zero eigenvalue.[/]")
                 return eigval, eigvec
             else:
                 # Check if the eigenvalue crossed the origin
@@ -256,13 +264,17 @@ def euler_newton(
                     nonzero_eigval = eigval
                 else:
                     # crossed the origin!
-                    console.print(
-                        "[yellow]Eigenvalue crossed origin!"
-                        + "\nRestarting with smaller step size.[/]"
-                    )
+                    if verbose:
+                        console.print(
+                            "[yellow]Eigenvalue crossed origin!"
+                            + "\nRestarting with smaller step size.[/]"
+                        )
                     # order 1 approximation for the zero eigenvalue
                     ds *= nonzero_eigval / (nonzero_eigval - eigval)
                     continue
+
+        if verbose:
+            print("Next predictor >")
 
         # Approximate dlmbda/ds and du/ds for the next predictor step
         if predictor_variant == "tangent":
@@ -273,9 +285,10 @@ def euler_newton(
                     u, lmbda, -problem.df_dlmbda(u, lmbda)
                 )
             except JacobianSolverError:
-                console.print(
-                    "[red]Jacobian solver error in tangent predictor! Abort.[/]"
-                )
+                if verbose:
+                    console.print(
+                        "[red]Jacobian solver error in tangent predictor! Abort.[/]"
+                    )
                 raise
             # Make sure the sign of dlambda_ds is correct
             r = theta ** 2 * problem.inner(du_dlmbda, u - u_current) + (
@@ -325,12 +338,13 @@ def euler_newton(
         # When removing the "+1"s, this is the expression that is used in LOCA (equation
         # (2.25) in the LOCA book).
         if cos_alpha < cos_alpha_min:
-            console.print(
-                "[yellow]Angle between subsequent predictors too large "
-                + f"(cos(alpha) = {cos_alpha:.3f} < {cos_alpha_min:.3f})."
-                + "\nRestarting with smaller step size.[/]",
-                highlight=False,
-            )
+            if verbose:
+                console.print(
+                    "[yellow]Angle between subsequent predictors too large "
+                    + f"(cos(alpha) = {cos_alpha:.3f} < {cos_alpha_min:.3f})."
+                    + "\nRestarting with smaller step size.[/]",
+                    highlight=False,
+                )
             ds *= 0.5
             continue
 
@@ -383,6 +397,7 @@ def _newton_corrector(
     corrector_variant: str,
     max_newton_steps: int,
     newton_tol: float,
+    verbose: bool,
 ):
     console = Console()
 
@@ -407,15 +422,16 @@ def _newton_corrector(
             )
 
         norms2 = (problem.norm2_r(r), q ** 2)
-        print(
-            f"Newton norms: sqrt({norms2[0]:.3e} + {norms2[1]:.3e}) "
-            f"= {math.sqrt(norms2[0] + norms2[1]):.3e}"
-        )
-        if norms2[0] + norms2[1] < newton_tol ** 2:
-            console.print(
-                f"[green]Newton corrector converged after {num_newton_steps} steps.[/]"
+        if verbose:
+            print(
+                f"Newton norms: sqrt({norms2[0]:.3e} + {norms2[1]:.3e}) "
+                f"= {math.sqrt(norms2[0] + norms2[1]):.3e}"
             )
-            print(f"lmbda = {lmbda}, <u, u> = {problem.inner(u, u)}")
+        if norms2[0] + norms2[1] < newton_tol ** 2:
+            if verbose:
+                console.print(
+                    f"[green]Newton corrector converged after {num_newton_steps} steps.[/]"
+                )
             newton_success = True
             break
 
