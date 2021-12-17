@@ -1,13 +1,13 @@
+import krylov
 import matplotlib.pyplot as plt
 import meshio
 import meshplex
 import meshzoo
 import numpy as np
 import pyfvm
-import pykry
 import pytest
 from pyfvm.form_language import dS, integrate, n_dot_grad
-from scipy.sparse.linalg import spsolve
+from scipy.sparse.linalg import LinearOperator, spsolve
 
 import pacopy
 
@@ -35,8 +35,10 @@ class GrossPitaevskii:
 
     def __init__(self):
         a = 24.0
-        points, cells = meshzoo.rectangle_tri((-a / 2, -a / 2), (a / 2, a / 2), 50)
-        self.mesh = meshplex.MeshTri(points, cells)
+        points, cells = meshzoo.rectangle_tri(
+            np.linspace(-a / 2, a / 2, 50), np.linspace(-a / 2, a / 2, 50)
+        )
+        self.mesh = meshplex.Mesh(points, cells)
 
         x, y, z = self.mesh.points.T
         assert np.all(np.abs(z) < 1.0e-15)
@@ -81,8 +83,8 @@ class GrossPitaevskii:
             return out
 
         n = len(self.mesh.points)
-        jac = pykry.LinearOperator(
-            (n, n), complex, dot=_apply_jacobian, dot_adj=_apply_jacobian
+        jac = LinearOperator(
+            (n, n), dtype=complex, matvec=_apply_jacobian, rmatvec=_apply_jacobian
         )
 
         def prec(psi):
@@ -97,15 +99,18 @@ class GrossPitaevskii:
                 return out
 
             num_unknowns = len(self.mesh.points)
-            return pykry.LinearOperator(
-                (num_unknowns, num_unknowns), complex, dot=_apply, dot_adj=_apply
+            return LinearOperator(
+                (num_unknowns, num_unknowns),
+                dtype=complex,
+                matvec=_apply,
+                rmatvec=_apply,
             )
 
-        out = pykry.gmres(
+        out, _ = krylov.gmres(
             A=jac,
             b=rhs,
             # M=prec(psi),
-            inner_product=self.inner,
+            inner=self.inner,
             maxiter=100,
             tol=1.0e-12,
             # Minv=prec_inv(psi),

@@ -33,8 +33,10 @@ def set_dirichlet_rows(matrix, idx):
 class Brusselator2d:
     def __init__(self):
         a = 20.0
-        points, cells = meshzoo.rectangle(-a / 2, a / 2, -a / 2, a / 2, 40, 40)
-        self.mesh = meshplex.MeshTri(points, cells)
+        points, cells = meshzoo.rectangle_tri(
+            np.linspace(-a / 2, a / 2, 40), np.linspace(-a / 2, a / 2, 40)
+        )
+        self.mesh = meshplex.Mesh(points, cells)
         self.A, _ = pyfvm.get_fvm_matrix(self.mesh, [Poisson()])
 
         # k = 1

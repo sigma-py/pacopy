@@ -347,12 +347,12 @@ def _newton_corrector(
     lmbda: float,
     theta,
     u_current,
-    lmbda_current,
+    lmbda_current: float,
     du_ds,
-    dlmbda_ds,
+    dlmbda_ds: float,
     ds,
-    corrector_variant,
-    max_newton_steps,
+    corrector_variant: str,
+    max_newton_steps: int,
     newton_tol: float,
 ):
     # Newton corrector
@@ -375,12 +375,12 @@ def _newton_corrector(
                 - ds ** 2
             )
 
+        norms2 = (problem.norm2_r(r), q ** 2)
         print(
-            "Newton norms: sqrt({:.3e} + {:.3e}) = {:.3e}".format(
-                problem.norm2_r(r), q ** 2, math.sqrt(problem.norm2_r(r) + q ** 2)
-            )
+            f"Newton norms: sqrt({norms2[0]:.3e} + {norms2[1]:.3e}) "
+            f"= {math.sqrt(norms2[0] + norms2[1]):.3e}"
         )
-        if problem.norm2_r(r) + q ** 2 < newton_tol ** 2:
+        if norms2[0] + norms2[1] < newton_tol ** 2:
             print(f"Newton corrector converged after {num_newton_steps} steps.")
             print(f"lmbda = {lmbda}, <u, u> = {problem.inner(u, u)}")
             newton_success = True

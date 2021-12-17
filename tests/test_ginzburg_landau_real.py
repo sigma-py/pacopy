@@ -4,15 +4,15 @@ split into real and imaginary part such that all computations are done as float.
 This complicates many things, but can be useful for debugging. This formulation is quite
 close to the original C++ nosh.
 """
+import krylov
 import meshio
 import meshplex
 import meshzoo
 import numpy as np
 import pyfvm
-import pykry
 import scipy.sparse
 import yaml
-from scipy.sparse.linalg import spsolve
+from scipy.sparse.linalg import LinearOperator, spsolve
 
 import pacopy
 
@@ -25,7 +25,7 @@ class Energy:
         self.subdomains = [None]
 
     def eval(self, mesh, cell_mask):
-        nec = mesh.idx_hierarchy[..., cell_mask]
+        nec = mesh.idx[-1][..., cell_mask]
         X = mesh.points[nec]
 
         edge_midpoint = 0.5 * (X[0] + X[1])
@@ -56,7 +56,7 @@ class EnergyPrime:
         self.subdomains = [None]
 
     def eval(self, mesh, cell_mask):
-        nec = mesh.idx_hierarchy[..., cell_mask]
+        nec = mesh.idx[-1][..., cell_mask]
         X = mesh.points[nec]
 
         edge_midpoint = 0.5 * (X[0] + X[1])
@@ -235,8 +235,11 @@ class GinzburgLandauReal:
                 return out
 
             num_unknowns = len(self.mesh.points)
-            return pykry.LinearOperator(
-                (2 * num_unknowns, 2 * num_unknowns), float, dot=_apply, dot_adj=_apply
+            return LinearOperator(
+                (2 * num_unknowns, 2 * num_unknowns),
+                dtype=float,
+                matvec=_apply,
+                rmatvec=_apply,
             )
 
         jac = self.jacobian(psi, mu)
@@ -244,16 +247,16 @@ class GinzburgLandauReal:
         # Cannot use direct solve since jacobian is always singular
         # return spsolve(jac, rhs)
 
-        out = pykry.gmres(
+        sol, _ = krylov.gmres(
             A=jac,
             b=rhs,
             # TODO enable preconditioner
             # M=prec(psi),
-            inner_product=self.inner,
+            inner=self.inner,
             maxiter=100,
             tol=1.0e-12,
         )
-        return out.xk
+        return sol
 
     def jacobian_eigenvalue(self, psi, mu):
         jac = self.jacobian(psi, mu)
@@ -291,11 +294,13 @@ class GinzburgLandauReal:
 def test_self_adjointness():
     a = 10.0
     n = 10
-    points, cells = meshzoo.rectangle_tri((-a / 2, -a / 2), (a / 2, a / 2), n)
+    points, cells = meshzoo.rectangle_tri(
+        np.linspace(-a / 2, a / 2, n), np.linspace(-a / 2, a / 2, n)
+    )
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 
-    mesh = meshplex.MeshTri(points, cells)
+    mesh = meshplex.Mesh(points, cells)
 
     problem = GinzburgLandauReal(mesh)
     n = problem.mesh.control_volumes.shape[0]
@@ -315,11 +320,13 @@ def test_f():
 
     a = 10.0
     n = 10
-    points, cells = meshzoo.rectangle_tri((-a / 2, -a / 2), (a / 2, a / 2), n)
+    points, cells = meshzoo.rectangle_tri(
+        np.linspace(-a / 2, a / 2, n), np.linspace(-a / 2, a / 2, n)
+    )
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 
-    mesh = meshplex.MeshTri(points, cells)
+    mesh = meshplex.Mesh(points, cells)
 
     gl = GinzburgLandau(mesh)
     glr = GinzburgLandauReal(mesh)
@@ -341,11 +348,13 @@ def test_df_dlmbda():
 
     a = 10.0
     n = 10
-    points, cells = meshzoo.rectangle_tri((-a / 2, -a / 2), (a / 2, a / 2), n)
+    points, cells = meshzoo.rectangle_tri(
+        np.linspace(-a / 2, a / 2, n), np.linspace(-a / 2, a / 2, n)
+    )
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 
-    mesh = meshplex.MeshTri(points, cells)
+    mesh = meshplex.Mesh(points, cells)
 
     gl = GinzburgLandau(mesh)
     glr = GinzburgLandauReal(mesh)
@@ -367,11 +376,13 @@ def test_jacobian():
 
     a = 10.0
     n = 10
-    points, cells = meshzoo.rectangle_tri((-a / 2, -a / 2), (a / 2, a / 2), n)
+    points, cells = meshzoo.rectangle_tri(
+        np.linspace(-a / 2, a / 2, n), np.linspace(-a / 2, a / 2, n)
+    )
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 
-    mesh = meshplex.MeshTri(points, cells)
+    mesh = meshplex.Mesh(points, cells)
 
     gl = GinzburgLandau(mesh)
     glr = GinzburgLandauReal(mesh)
@@ -395,11 +406,13 @@ def test_jacobian():
 def test_continuation(max_steps=5):
     a = 10.0
     n = 20
-    points, cells = meshzoo.rectangle_tri((-a / 2, -a / 2), (a / 2, a / 2), n)
+    points, cells = meshzoo.rectangle_tri(
+        np.linspace(-a / 2, a / 2, n), np.linspace(-a / 2, a / 2, n)
+    )
     # add column with zeros for magnetic potential
     points = np.column_stack([points, np.zeros(points.shape[0])])
 
-    mesh = meshplex.MeshTri(points, cells)
+    mesh = meshplex.Mesh(points, cells)
 
     problem = GinzburgLandauReal(mesh)
     num_unknowns = 2 * problem.mesh.control_volumes.shape[0]
@@ -422,8 +435,9 @@ def test_continuation(max_steps=5):
 
     filename = "sol.xdmf"
     with meshio.xdmf.TimeSeriesWriter(filename) as writer:
+        print(problem.mesh.cells)
         writer.write_points_cells(
-            problem.mesh.points, [("triangle", problem.mesh.cells["points"])]
+            problem.mesh.points, [("triangle", problem.mesh.cells("points"))]
         )
 
         def callback(k, mu, sol):
