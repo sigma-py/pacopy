@@ -5,7 +5,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/nschloe/pacopy.svg?style=flat-square&logo=github&label=Stars&logoColor=white)](https://github.com/nschloe/pacopy)
 [![PyPi downloads](https://img.shields.io/pypi/dm/pacopy.svg?style=flat-square)](https://pypistats.org/packages/pacopy)
 
-[![Discord](https://img.shields.io/static/v1?logo=discord&label=chat&message=on%20discord&color=7289da&style=flat-square)](https://discord.gg/hnTJ5MRX2Y)
+[![Discord](https://img.shields.io/static/v1?logo=discord&logoColor=white&label=chat&message=on%20discord&color=7289da&style=flat-square)](https://discord.gg/hnTJ5MRX2Y)
 
 [![gh-actions](https://img.shields.io/github/workflow/status/nschloe/pacopy/ci?style=flat-square)](https://github.com/nschloe/pacopy/actions?query=workflow%3Aci)
 [![codecov](https://img.shields.io/codecov/c/github/nschloe/pacopy.svg?style=flat-square)](https://codecov.io/gh/nschloe/pacopy)
@@ -283,7 +283,7 @@ pacopy.euler_newton(problem, u0, lmbda0, callback, max_steps=500, newton_tol=1.0
 
 #### Ginzburg–Landau
 
-![ginzburg-landau](https://nschloe.github.io/pacopy/ginzburg-landau.gif)
+https://user-images.githubusercontent.com/181628/146639709-90b6e6aa-48ba-418d-9aa4-ec5754f95b93.mp4
 
 The [Ginzburg-Landau
 equations](https://en.wikipedia.org/wiki/Ginzburg%E2%80%93Landau_theory) model the

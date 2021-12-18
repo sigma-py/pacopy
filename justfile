@@ -27,3 +27,6 @@ format:
 lint:
 	black --check .
 	flake8 .
+
+mp4:
+	ffmpeg -framerate 4 -i fig%03d.png -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2:color=white" -c:v libx264 -r 30 -pix_fmt yuv420p out.mp4

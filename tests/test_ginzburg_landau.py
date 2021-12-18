@@ -378,7 +378,8 @@ def plot_data():
         ax1.grid()
         ax1.plot(data["mu"][k], energies[k], "o", color="#1f77f4")
         ax1.set_xlabel("$\\mu$")
-        ax1.set_ylabel("$\\mathcal{E}(\\psi)$")
+        ylabel = ax1.set_ylabel("$\\mathcal{E}(\\psi)$", labelpad=20)
+        ylabel.set_rotation(0)
 
         ax2 = plt.subplot(1, 2, 2)
         _, point_data, _ = reader.read_data(k)
@@ -413,5 +414,5 @@ if __name__ == "__main__":
     # test_self_adjointness()
     # test_f_i_psi()
     # test_df_dlmbda()
-    test_ginzburg_landau(max_steps=500, n=50)
-    # plot_data()
+    # test_ginzburg_landau(max_steps=85, n=50)
+    plot_data()
