@@ -283,7 +283,7 @@ pacopy.euler_newton(problem, u0, lmbda0, callback, max_steps=500, newton_tol=1.0
 
 #### Ginzburg–Landau
 
-https://nschloe.github.io/pacopy/ginzburg-landau.mp4
+https://user-images.githubusercontent.com/181628/146639449-fcc4f9df-d931-4e7e-9bed-02749824f47f.mp4
 
 The [Ginzburg-Landau
 equations](https://en.wikipedia.org/wiki/Ginzburg%E2%80%93Landau_theory) model the
