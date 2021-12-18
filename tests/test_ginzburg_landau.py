@@ -413,5 +413,5 @@ if __name__ == "__main__":
     # test_self_adjointness()
     # test_f_i_psi()
     # test_df_dlmbda()
-    test_ginzburg_landau(max_steps=500, n=50)
-    # plot_data()
+    # test_ginzburg_landau(max_steps=85, n=50)
+    plot_data()

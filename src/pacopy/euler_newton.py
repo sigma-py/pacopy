@@ -164,7 +164,7 @@ def euler_newton(
     if converge_onto_zero_eigenvalue:
         # Track _one_ nonzero eigenvalue.
         tol = 1.0e-10
-        nonzero_eigval, _ = problem.jacobian_eigenvalue(u, lmbda)
+        prev_eigval, _ = problem.jacobian_eigenvalue(u, lmbda)
 
     ds = abs(stepsize0)
 
@@ -261,10 +261,8 @@ def euler_newton(
                 return eigval, eigvec
             else:
                 # Check if the eigenvalue crossed the origin
-                if (nonzero_eigval > 0 and eigval > 0) or (
-                    nonzero_eigval < 0 and eigval < 0
-                ):
-                    nonzero_eigval = eigval
+                if (prev_eigval > 0 and eigval > 0) or (prev_eigval < 0 and eigval < 0):
+                    prev_eigval = eigval
                 else:
                     # crossed the origin!
                     if verbose:
@@ -273,7 +271,7 @@ def euler_newton(
                             + "\nRestarting with smaller step size.[/]"
                         )
                     # order 1 approximation for the zero eigenvalue
-                    ds *= nonzero_eigval / (nonzero_eigval - eigval)
+                    ds *= prev_eigval / (prev_eigval - eigval)
                     continue
 
         if verbose:
