@@ -327,6 +327,7 @@ def test_ginzburg_landau(max_steps=5, n=20):
             stepsize0=1.0e-2,
             stepsize_max=1.0,
             newton_tol=1.0e-10,
+            # corrector_variant="secant",
         )
         # pacopy.branch_switching(
         #     problem,
@@ -414,5 +415,5 @@ if __name__ == "__main__":
     # test_self_adjointness()
     # test_f_i_psi()
     # test_df_dlmbda()
-    # test_ginzburg_landau(max_steps=85, n=50)
-    plot_data()
+    test_ginzburg_landau(max_steps=85, n=50)
+    # plot_data()

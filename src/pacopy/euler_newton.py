@@ -3,6 +3,11 @@ from __future__ import annotations
 import math
 from typing import Callable
 
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal
+
 from rich.console import Console
 
 from .errors import JacobianSolverError
@@ -43,10 +48,8 @@ def euler_newton(
     verbose: bool = True,
     newton_tol: float = 1.0e-12,
     max_newton_steps: int = 5,
-    predictor_variant: str = "tangent",
-    corrector_variant: str = "tangent",
-    # predictor_variant: Literal["tangent"] | Literal["secant"] = "tangent",
-    # corrector_variant: Literal["tangent"] | Literal["secant"] = "tangent",
+    predictor_variant: Literal["tangent"] | Literal["secant"] = "tangent",
+    corrector_variant: Literal["tangent"] | Literal["secant"] = "tangent",
     #
     stepsize0: float = 5.0e-1,
     stepsize_max: float = float("inf"),
@@ -77,13 +80,13 @@ def euler_newton(
         corrector_variant (string): :code:`"tangent"` or :code:`"secant"`
         stepsize0 (float): Initial step size
         stepsize_max (float): Maximum step size
-        stepsize_aggressiveness (float): The step size is adapted after each step
-            such that :code:`max_newton_steps` is exhausted approximately. This
-            parameter determines how aggressively the the step size is increased if too
-            few Newton steps were used.
-        cos_alpha_min (float): To make a plotted parameter-solution norm curve look
-            smooth, subsequent predictors should have a small angle between them. The
-            correct way to do this would be to look at
+        stepsize_aggressiveness (float): The step size is adapted after each
+            step such that :code:`max_newton_steps` is exhausted approximately.
+            This parameter determines how aggressively the step size is increased
+            if too few Newton steps were used.
+        cos_alpha_min (float): To make a plotted parameter-solution norm curve
+            look smooth, subsequent predictors should have a small angle between
+            them. The correct way to do this would be to look at
 
             .. math::
 
@@ -302,8 +305,8 @@ def euler_newton(
             assert predictor_variant == "secant"
             du_ds = (u - u_current) / ds
             dlmbda_ds = (lmbda - lmbda_current) / ds
-            # du_lmbda not necessary here. TODO remove
-            du_dlmbda = du_ds / dlmbda_ds
+            # du_dlmbda not necessary here.
+            # du_dlmbda = du_ds / dlmbda_ds
 
         # At this point, du_ds and dlmbda_ds are still unscaled so they do NOT
         # correspond to the true du/ds and dlmbda/ds yet.
@@ -401,31 +404,39 @@ def _newton_corrector(
     newton_tol: float,
     verbose: bool,
 ):
+    """Solve the nonlinear equations
+
+       f(u, lmbda) = 0
+       theta ** 2 * <du_ds_1, du_ds> + dlmbda_ds_1 * dlmbda_ds = 1.0,
+
+       du_ds_1  = (u - u_last) / ds
+       dlmbda_ds_1  = (lmbda - lmbda_last) / ds
+
+    The second equation can be replaced by the double approximation,
+
+       theta ** 2 * <du_ds_1, du_ds_1> + dlmbda_ds_1 ** 2 = 1.0
+
+    ("secant variant").
+    """
     console = Console()
 
     # Newton corrector
     num_newton_steps = 0
     newton_success = False
 
+    assert corrector_variant in ["tangent", "secant"]
+    is_variant_tangent = corrector_variant == "tangent"
+
     while True:
         r = problem.f(u, lmbda)
-        if corrector_variant == "tangent":
-            q = (
-                theta2 * problem.inner(u - u_current, du_ds)
-                + (lmbda - lmbda_current) * dlmbda_ds
-                - ds
-            )
+        du_ds_1 = (u - u_current) / ds
+        dlmbda_ds_1 = (lmbda - lmbda_current) / ds
+        if is_variant_tangent:
+            rho = theta2 * problem.inner(du_ds, du_ds_1) + dlmbda_ds * dlmbda_ds_1 - 1.0
         else:
-            assert corrector_variant == "secant"
-            q = (
-                theta2 * problem.inner(u - u_current, u - u_current)
-                + (lmbda - lmbda_current) ** 2
-                # TODO square here? document this whole function better, we
-                # need equations!
-                - ds ** 2
-            )
+            rho = theta2 * problem.inner(du_ds_1, du_ds_1) + dlmbda_ds_1 ** 2 - 1.0
 
-        norms2 = (problem.norm2_r(r), q ** 2)
+        norms2 = (problem.norm2_r(r), rho ** 2)
         if verbose:
             print(
                 f"Newton norms: sqrt({norms2[0]:.3e} + {norms2[1]:.3e}) "
@@ -442,24 +453,45 @@ def _newton_corrector(
         if num_newton_steps >= max_newton_steps:
             break
 
-        # Solve
+        # Solve the Newton update
         #
-        #  (J,     dF/dlmbda) (du    )  =  -(F)
-        #  (du/ds, dlmbda/ds) (dlmbda)      (q)
+        #  (J,                     df_dlmbda       ) (du    )  = -(r  )
+        #  (theta2 * du_ds * 1/ds, dlmbda_ds * 1/ds) (dlmbda)  = -(rho)
+        #
+        # (This is for the tangent variant, it's slightly different for secant.)
+        #
+        # In general form, the equation system
+        #
+        #  (A   b) (x)     = (r)
+        #  (c^T d) (alpha) = (rho)
+        #
+        # has the solution
+        #
+        #   z1 = A^{-1} r
+        #   z2 = -A^{-1} b
+        #   alpha = (rho - c^T z1) / (d + c^T z2)
+        #   x = z1 + alpha * z2
+        #
+        # This respresentation has the advantage that, instead of solving one
+        # bordered system, one can solve two systems with A, making use of
+        # preconditioner strategies for A etc.
         #
         z1 = problem.jacobian_solver(u, lmbda, -r)
         z2 = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
 
-        if corrector_variant == "tangent":
-            dlmbda = -(q + theta2 * problem.inner(du_ds, z1)) / (
-                dlmbda_ds + theta2 * problem.inner(du_ds, z2)
-            )
+        if is_variant_tangent:
+            # dlmbda = alpha
+            # = (-rho - theta2 * <du_ds / ds, z1>)
+            #   / (dlmbda_ds / ds + theta2 * <du_ds / ds, z2>)
+            # = (-rho * ds - theta2 * <du_ds, z1>)
+            #   / (dlmbda_ds + theta2 * <du_ds, z2>)
+            tz1 = theta2 * problem.inner(du_ds, z1)
+            tz2 = theta2 * problem.inner(du_ds, z2)
+            dlmbda = (-rho * ds - tz1) / (dlmbda_ds + tz2)
         else:
-            assert corrector_variant == "secant"
-            dlmbda = -(q + 2 * theta2 * problem.inner(u - u_current, z1)) / (
-                2 * (lmbda - lmbda_current)
-                + 2 * theta2 * problem.inner(u - u_current, z2)
-            )
+            tz1 = theta2 * problem.inner(du_ds_1, z1)
+            tz2 = theta2 * problem.inner(du_ds_1, z2)
+            dlmbda = (-rho * ds / 2 - tz1) / (dlmbda_ds_1 + tz2)
 
         # du = z1 + dlmbda * z2
         u += z1 + dlmbda * z2
