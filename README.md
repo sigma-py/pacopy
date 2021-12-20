@@ -286,13 +286,12 @@ pacopy.euler_newton(problem, u0, lmbda0, callback, max_steps=500, newton_tol=1.0
 https://user-images.githubusercontent.com/181628/146639709-90b6e6aa-48ba-418d-9aa4-ec5754f95b93.mp4
 
 The [Ginzburg-Landau
-equations](https://en.wikipedia.org/wiki/Ginzburg%E2%80%93Landau_theory) model the
-behavior of extreme type-II superconductors under a magnetic field. The above example
-(to be found in full detail
-[here](https://github.com/nschloe/pacopy/blob/master/test/test_ginzburg_landau.py))
-shows parameter continuation in the strength of the magnetic field. The plot on the
-right-hand side shows the complex-valued solution using
-[cplot](https://github.com/nschloe/cplot).
+equations](https://en.wikipedia.org/wiki/Ginzburg%E2%80%93Landau_theory) model
+the behavior of extreme type-II superconductors under a magnetic field. The
+above example (to be found in full detail
+[here](tests/test_ginzburg_landau.py)) shows parameter continuation in the
+strength of the magnetic field. The plot on the right-hand side shows the
+complex-valued solution using [cplot](https://github.com/nschloe/cplot).
 
 
 ### License
