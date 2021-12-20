@@ -327,7 +327,6 @@ def test_ginzburg_landau(max_steps=5, n=20):
             stepsize0=1.0e-2,
             stepsize_max=1.0,
             newton_tol=1.0e-10,
-            # corrector_variant="secant",
         )
         # pacopy.branch_switching(
         #     problem,

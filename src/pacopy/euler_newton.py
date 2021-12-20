@@ -36,7 +36,7 @@ def tangent(u, lmbda):
 
        0 = df/du v.
     """
-    pass
+    raise NotImplementedError()
 
 
 def euler_newton(
@@ -49,7 +49,6 @@ def euler_newton(
     newton_tol: float = 1.0e-12,
     max_newton_steps: int = 5,
     predictor_variant: Literal["tangent"] | Literal["secant"] = "tangent",
-    corrector_variant: Literal["tangent"] | Literal["secant"] = "tangent",
     #
     stepsize0: float = 5.0e-1,
     stepsize_max: float = float("inf"),
@@ -77,7 +76,6 @@ def euler_newton(
         newton_tol: Newton tolerance
         max_newton_steps: Maxmimum number of Newton steps
         predictor_variant (string): :code:`"tangent"` or :code:`"secant"`
-        corrector_variant (string): :code:`"tangent"` or :code:`"secant"`
         stepsize0 (float): Initial step size
         stepsize_max (float): Maximum step size
         stepsize_aggressiveness (float): The step size is adapted after each
@@ -226,10 +224,7 @@ def euler_newton(
                 theta2,
                 u_current,
                 lmbda_current,
-                du_ds_current,
-                dlmbda_ds_current,
                 ds,
-                corrector_variant,
                 max_newton_steps,
                 newton_tol,
                 verbose,
@@ -393,13 +388,10 @@ def _newton_corrector(
     problem,
     u,
     lmbda: float,
-    theta2,
+    theta2: float,
     u_current,
     lmbda_current: float,
-    du_ds,
-    dlmbda_ds: float,
-    ds,
-    corrector_variant: str,
+    ds: float,
     max_newton_steps: int,
     newton_tol: float,
     verbose: bool,
@@ -407,16 +399,12 @@ def _newton_corrector(
     """Solve the nonlinear equations
 
        f(u, lmbda) = 0
-       theta ** 2 * <du_ds_1, du_ds> + dlmbda_ds_1 * dlmbda_ds = 1.0,
+       theta ** 2 * <du_ds_1, du_ds_1> + dlmbda_ds_1 ** 2 = 1.0,
 
-       du_ds_1  = (u - u_last) / ds
-       dlmbda_ds_1  = (lmbda - lmbda_last) / ds
+       du_ds_1  = (u - u_current) / ds
+       dlmbda_ds_1  = (lmbda - lmbda_current) / ds
 
-    The second equation can be replaced by the double approximation,
-
-       theta ** 2 * <du_ds_1, du_ds_1> + dlmbda_ds_1 ** 2 = 1.0
-
-    ("secant variant").
+    The second equation is the relative error of the target step size `ds`.
     """
     console = Console()
 
@@ -424,18 +412,19 @@ def _newton_corrector(
     num_newton_steps = 0
     newton_success = False
 
-    assert corrector_variant in ["tangent", "secant"]
-    is_variant_tangent = corrector_variant == "tangent"
-
     while True:
         r = problem.f(u, lmbda)
         du_ds_1 = (u - u_current) / ds
         dlmbda_ds_1 = (lmbda - lmbda_current) / ds
-        if is_variant_tangent:
-            rho = theta2 * problem.inner(du_ds, du_ds_1) + dlmbda_ds * dlmbda_ds_1 - 1.0
-        else:
-            rho = theta2 * problem.inner(du_ds_1, du_ds_1) + dlmbda_ds_1 ** 2 - 1.0
 
+        rho = theta2 * problem.inner(du_ds_1, du_ds_1) + dlmbda_ds_1 ** 2 - 1.0
+        # There also is a "tangent" variant of it with one du_ds_1 replaced by
+        # du_ds,
+        #
+        # rho = theta2 * problem.inner(du_ds, du_ds_1) + dlmbda_ds * dlmbda_ds_1 - 1.0
+        #
+        # but I can't recall why that was necessary or useful (nschloe, Dec 20,
+        # 2021).
         norms2 = (problem.norm2_r(r), rho ** 2)
         if verbose:
             print(
@@ -445,7 +434,9 @@ def _newton_corrector(
         if norms2[0] + norms2[1] < newton_tol ** 2:
             if verbose:
                 console.print(
-                    f"[green]Newton corrector converged after {num_newton_steps} steps.[/]"
+                    "[green]"
+                    + f"Newton corrector converged after {num_newton_steps} steps."
+                    + "[/]"
                 )
             newton_success = True
             break
@@ -479,23 +470,28 @@ def _newton_corrector(
         z1 = problem.jacobian_solver(u, lmbda, -r)
         z2 = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
 
-        if is_variant_tangent:
-            # dlmbda = alpha
-            # = (-rho - theta2 * <du_ds / ds, z1>)
-            #   / (dlmbda_ds / ds + theta2 * <du_ds / ds, z2>)
-            # = (-rho * ds - theta2 * <du_ds, z1>)
-            #   / (dlmbda_ds + theta2 * <du_ds, z2>)
-            tz1 = theta2 * problem.inner(du_ds, z1)
-            tz2 = theta2 * problem.inner(du_ds, z2)
-            dlmbda = (-rho * ds - tz1) / (dlmbda_ds + tz2)
-        else:
-            tz1 = theta2 * problem.inner(du_ds_1, z1)
-            tz2 = theta2 * problem.inner(du_ds_1, z2)
-            dlmbda = (-rho * ds / 2 - tz1) / (dlmbda_ds_1 + tz2)
+        # secant variant:
+        tz1 = theta2 * problem.inner(du_ds_1, z1)
+        tz2 = theta2 * problem.inner(du_ds_1, z2)
+        # The division by 2 is from the the squared terms in rho
+        dlmbda = (-rho * ds / 2 - tz1) / (dlmbda_ds_1 + tz2)
+
+        # tangent variant:
+        # # dlmbda = alpha
+        # # = (-rho - theta2 * <du_ds / ds, z1>)
+        # #   / (dlmbda_ds / ds + theta2 * <du_ds / ds, z2>)
+        # # = (-rho * ds - theta2 * <du_ds, z1>)
+        # #   / (dlmbda_ds + theta2 * <du_ds, z2>)
+        # tz1 = theta2 * problem.inner(du_ds, z1)
+        # tz2 = theta2 * problem.inner(du_ds, z2)
+        # dlmbda = (-rho * ds - tz1) / (dlmbda_ds + tz2)
 
         # du = z1 + dlmbda * z2
         u += z1 + dlmbda * z2
         lmbda += dlmbda
         num_newton_steps += 1
+
+    du_ds_1 = (u - u_current) / ds
+    dlmbda_ds_1 = (lmbda - lmbda_current) / ds
 
     return u, lmbda, num_newton_steps, newton_success
