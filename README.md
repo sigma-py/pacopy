@@ -1,14 +1,14 @@
 # pacopy
 
-[![PyPi Version](https://img.shields.io/pypi/v/pacopy.svg?style=flat-square)](https://pypi.org/project/pacopy)
-[![PyPI pyversions](https://img.shields.io/pypi/pyversions/pacopy.svg?style=flat-square)](https://pypi.org/pypi/pacopy/)
+[![PyPi Version](https://img.shields.io/pypi/v/pacopy.svg?style=flat-square)](https://pypi.org/project/pacopy/)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/pacopy.svg?style=flat-square)](https://pypi.org/project/pacopy/)
 [![GitHub stars](https://img.shields.io/github/stars/nschloe/pacopy.svg?style=flat-square&logo=github&label=Stars&logoColor=white)](https://github.com/nschloe/pacopy)
 [![PyPi downloads](https://img.shields.io/pypi/dm/pacopy.svg?style=flat-square)](https://pypistats.org/packages/pacopy)
 
 [![Discord](https://img.shields.io/static/v1?logo=discord&logoColor=white&label=chat&message=on%20discord&color=7289da&style=flat-square)](https://discord.gg/hnTJ5MRX2Y)
 
 [![gh-actions](https://img.shields.io/github/workflow/status/nschloe/pacopy/ci?style=flat-square)](https://github.com/nschloe/pacopy/actions?query=workflow%3Aci)
-[![codecov](https://img.shields.io/codecov/c/github/nschloe/pacopy.svg?style=flat-square)](https://codecov.io/gh/nschloe/pacopy)
+[![codecov](https://img.shields.io/codecov/c/github/nschloe/pacopy.svg?style=flat-square)](https://app.codecov.io/gh/nschloe/pacopy)
 [![LGTM](https://img.shields.io/lgtm/grade/python/github/nschloe/pacopy.svg?style=flat-square)](https://lgtm.com/projects/g/nschloe/pacopy)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
 
@@ -17,7 +17,7 @@ continuation](https://en.wikipedia.org/wiki/Numerical_continuation) for ODEs and
 Python.
 
 pacopy is backend-agnostic, so it doesn't matter if your problem is formulated with
-[NumPy](https://numpy.org/), [SciPy](https://www.scipy.org/),
+[NumPy](https://numpy.org/), [SciPy](https://scipy.org/),
 [FEniCS](https://fenicsproject.org/), [pyfvm](https://github.com/nschloe/pyfvm), or any
 other Python package. The only thing the user must provide is a class with some simple
 methods, e.g., a function evaluation `f(u, lmbda)`, a Jacobian a solver
@@ -31,7 +31,7 @@ pip install pacopy
 To get started, take a look at the examples below.
 
 Some pacopy documentation is available
-[here](https://pacopy.readthedocs.org/en/latest/?badge=latest).
+[here](https://pacopy.readthedocs.io/en/latest/?badge=latest).
 
 ### Examples
 

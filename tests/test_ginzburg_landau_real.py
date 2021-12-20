@@ -36,7 +36,7 @@ class Energy:
         magnetic_potential = 0.5 * np.cross(self.magnetic_field, edge_midpoint)
 
         # The dot product <magnetic_potential, edge>, executed for many
-        # points at once; cf. <http://stackoverflow.com/a/26168677/353337>.
+        # points at once; cf. <https://stackoverflow.com/a/26168677/353337>.
         beta = np.einsum("...k,...k->...", magnetic_potential, edge)
 
         return np.array(
