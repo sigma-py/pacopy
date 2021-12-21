@@ -45,6 +45,7 @@ def euler_newton(
     lmbda0: float,
     callback: Callable,
     max_steps: float = float("inf"),
+    max_num_retries: float = float("inf"),
     verbose: bool = True,
     newton_tol: float = 1.0e-12,
     max_newton_steps: int = 5,
@@ -192,6 +193,7 @@ def euler_newton(
     dlmbda_ds_current = dlmbda_ds
     duds2_current = duds2
 
+    num_retries = 0
     callback(k, lmbda, u)
     k += 1
 
@@ -199,11 +201,22 @@ def euler_newton(
         if k > max_steps:
             break
 
+        if num_retries > max_num_retries:
+            console.print(
+                "[red]"
+                f"Maximum number of retries reached ({max_num_retries}) in step {k}. "
+                + "Abort."
+                + "[/red]",
+                highlight=False,
+            )
+            break
+
         if verbose:
             uu = problem.inner(u_current, u_current)
+            string = f" (retry #{num_retries})" if num_retries > 0 else ""
             console.print(
                 "\n[blue]"
-                + f"[bold]Step {k}[/bold]\n"
+                + f"[bold]Step {k}[/bold]{string}\n"
                 + f"lmbda = {lmbda_current:.3f}, <u, u> = {uu:.3f}, stepsize = {ds:.3e}"
                 + "[/blue]",
                 highlight=False,
@@ -236,6 +249,7 @@ def euler_newton(
                     + "[yellow]Restarting with smaller stepsize.[/]"
                 )
             ds *= 0.5
+            num_retries += 1
             continue
 
         if not newton_success:
@@ -245,6 +259,7 @@ def euler_newton(
                     + "\nRestarting with smaller step size.[/]"
                 )
             ds *= 0.5
+            num_retries += 1
             continue
 
         if converge_onto_zero_eigenvalue:
@@ -345,6 +360,7 @@ def euler_newton(
                     highlight=False,
                 )
             ds *= 0.5
+            num_retries += 1
             continue
 
         nrm = math.sqrt(theta2 * duds2 + dlmbda_ds ** 2)
@@ -374,6 +390,7 @@ def euler_newton(
 
         callback(k, lmbda, u)
         k += 1
+        num_retries = 0
 
         # Stepsize update
         ds *= (
@@ -413,6 +430,9 @@ def _newton_corrector(
     newton_success = False
 
     while True:
+        print()
+        print("u", problem.inner(u, u))
+        print("lmbda", lmbda)
         r = problem.f(u, lmbda)
         du_ds_1 = (u - u_current) / ds
         dlmbda_ds_1 = (lmbda - lmbda_current) / ds
@@ -470,11 +490,22 @@ def _newton_corrector(
         z1 = problem.jacobian_solver(u, lmbda, -r)
         z2 = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
 
+        dfdl = problem.df_dlmbda(u, lmbda)
+
+        print("df/dl", math.sqrt(problem.inner(dfdl, dfdl)))
+        print("f", math.sqrt(problem.inner(r, r)))
+        print("z1", math.sqrt(problem.inner(z1, z1)))
+        print("z2", math.sqrt(problem.inner(z2, z2)))
+        print("ds", ds)
+
         # secant variant:
         tz1 = theta2 * problem.inner(du_ds_1, z1)
         tz2 = theta2 * problem.inner(du_ds_1, z2)
         # The division by 2 is from the the squared terms in rho
+        print("frac1", -rho * ds / 2 - tz1)
+        print("frac2", dlmbda_ds_1 + tz2)
         dlmbda = (-rho * ds / 2 - tz1) / (dlmbda_ds_1 + tz2)
+        print("l", dlmbda)
 
         # tangent variant:
         # # dlmbda = alpha
