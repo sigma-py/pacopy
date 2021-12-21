@@ -430,9 +430,6 @@ def _newton_corrector(
     newton_success = False
 
     while True:
-        print()
-        print("u", problem.inner(u, u))
-        print("lmbda", lmbda)
         r = problem.f(u, lmbda)
         du_ds_1 = (u - u_current) / ds
         dlmbda_ds_1 = (lmbda - lmbda_current) / ds
@@ -490,22 +487,11 @@ def _newton_corrector(
         z1 = problem.jacobian_solver(u, lmbda, -r)
         z2 = problem.jacobian_solver(u, lmbda, -problem.df_dlmbda(u, lmbda))
 
-        dfdl = problem.df_dlmbda(u, lmbda)
-
-        print("df/dl", math.sqrt(problem.inner(dfdl, dfdl)))
-        print("f", math.sqrt(problem.inner(r, r)))
-        print("z1", math.sqrt(problem.inner(z1, z1)))
-        print("z2", math.sqrt(problem.inner(z2, z2)))
-        print("ds", ds)
-
         # secant variant:
         tz1 = theta2 * problem.inner(du_ds_1, z1)
         tz2 = theta2 * problem.inner(du_ds_1, z2)
         # The division by 2 is from the the squared terms in rho
-        print("frac1", -rho * ds / 2 - tz1)
-        print("frac2", dlmbda_ds_1 + tz2)
         dlmbda = (-rho * ds / 2 - tz1) / (dlmbda_ds_1 + tz2)
-        print("l", dlmbda)
 
         # tangent variant:
         # # dlmbda = alpha

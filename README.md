@@ -278,7 +278,9 @@ def callback(k, lmbda, sol):
 # Natural parameter continuation
 # pacopy.natural(problem, u0, lmbda0, callback, max_steps=100)
 
-pacopy.euler_newton(problem, u0, lmbda0, callback, max_steps=500, newton_tol=1.0e-10)
+pacopy.euler_newton(
+    problem, u0, lmbda0, callback, max_steps=500, max_num_retries=10, newton_tol=1.0e-10
+)
 ```
 
 #### Ginzburg–Landau
